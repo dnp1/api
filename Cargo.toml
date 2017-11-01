@@ -1,0 +1,6 @@
+[package]
+name = "api"
+version = "0.1.0"
+authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
+
+[dependencies]
