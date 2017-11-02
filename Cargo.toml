@@ -4,3 +4,13 @@ version = "0.1.0"
 authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
 [dependencies]
+iron="*"
+persistent="*"
+router = "*"
+mount = "*"
+staticfile="*"
+postgres = "*"
+r2d2="*"
+r2d2_postgres="*"
+handlebars-iron="*"
+rustc-serialize = "*"
