@@ -14,3 +14,7 @@ r2d2="*"
 r2d2_postgres="*"
 handlebars-iron="*"
 rustc-serialize = "*"
+
+[lib]
+name = "app"
+path = "src/app.rs"
