@@ -1,9 +1,61 @@
-pub mod file {
-    struct Service {
-        db: Pool<PostgresConnectionManager>
-    }
+extern crate iron;
+extern crate router;
+extern crate r2d2;
+extern crate r2d2_postgres;
+extern crate postgres;
 
-    fn file_create(req: &mut Request) -> IronResult<Response> {
-        Ok(Response::with(status::Ok))
+use iron::prelude::Response;
+use iron::prelude::Request;
+use iron::prelude::IronResult;
+use iron::status;
+//use iron::IronError;
+
+use iron::Handler;
+use std::sync::Arc;
+use std::error::Error;
+
+use router::Router;
+use r2d2::Pool;
+use r2d2_postgres::PostgresConnectionManager;
+
+pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router) {
+    let db = Arc::new(db);
+    r.post("/file", FileCreate { db: db.clone() }, "file_create");
+    r.get("/file", FileRead { db: db.clone() }, "file_read");
+    r.delete("/file", FileDelete { db: db.clone() }, "file_delete");
+}
+
+struct FileCreate { db: Arc<Pool<PostgresConnectionManager>> }
+
+impl Handler for FileCreate {
+    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        match self.db.get() {
+            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(connection) => Ok(Response::with((status::Ok, "")))
+        }
     }
 }
+
+struct FileRead { db: Arc<Pool<PostgresConnectionManager>> }
+
+impl Handler for FileRead {
+    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        match self.db.get() {
+            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(connection) => Ok(Response::with((status::Ok, "")))
+        }
+    }
+}
+
+struct FileDelete { db: Arc<Pool<PostgresConnectionManager>> }
+
+impl Handler for FileDelete {
+    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        match self.db.get() {
+            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(connection) => Ok(Response::with((status::Ok, "")))
+        }
+    }
+}
+
+

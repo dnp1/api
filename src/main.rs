@@ -1,13 +1,11 @@
 //STD
 use std::time::Duration;
-use std::option::Option;
 
 //Web framework
 extern crate iron;
 extern crate router;
 
 use iron::prelude::*;
-use iron::status;
 use iron::Timeouts;
 use router::Router;
 
@@ -19,21 +17,9 @@ extern crate postgres;
 use r2d2_postgres::{TlsMode, PostgresConnectionManager};
 use r2d2::Pool;
 
-use app::;
-use user;
+mod file;
 
 pub type PostgresPool = Pool<PostgresConnectionManager>;
-//pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
-
-
-
-
-fn setup_router(pool: PostgresPool) -> Router {
-    let mut router = Router::new();
-    let mut a = article::
-    router.post("/file", file_create, "file_create");
-    router
-}
 
 
 fn http_listen(router: Router) {
@@ -47,19 +33,22 @@ fn http_listen(router: Router) {
     iron.http("localhost:3000").unwrap();
 }
 
-fn setup_postgres(pool_size: u32, min_idle: u32) -> PostgresPool {
+fn setup_postgres(conn_str: &'static str, pool_size: u32, min_idle: u32) -> PostgresPool {
     let config = r2d2::Config::builder()
         .pool_size(pool_size)
         .min_idle(Some(min_idle))
         .build();
     let manager = PostgresConnectionManager::new(
-        "postgres://postgres@localhost",
+        conn_str,
         TlsMode::None).unwrap();
     r2d2::Pool::new(config, manager).unwrap()
 }
 
 fn main() {
-    let pool = setup_postgres(16, 4);
-    http_listen(setup_router(pool));
+    let pool = setup_postgres("postgres://postgres@localhost", 16, 4);
+    let mut router = Router::new();
+    file::register_handlers(pool, &mut router);
+
+    http_listen(router);
 }
 

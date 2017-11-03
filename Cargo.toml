@@ -3,6 +3,7 @@ name = "api"
 version = "0.1.0"
 authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
+
 [dependencies]
 iron="*"
 persistent="*"
@@ -14,7 +15,3 @@ r2d2="*"
 r2d2_postgres="*"
 handlebars-iron="*"
 rustc-serialize = "*"
-
-[lib]
-name = "app"
-path = "src/app.rs"
