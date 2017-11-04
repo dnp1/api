@@ -18,6 +18,8 @@ use r2d2_postgres::{TlsMode, PostgresConnectionManager};
 use r2d2::Pool;
 
 mod file;
+mod article;
+mod util;
 
 pub type PostgresPool = Pool<PostgresConnectionManager>;
 
@@ -45,9 +47,12 @@ fn setup_postgres(conn_str: &'static str, pool_size: u32, min_idle: u32) -> Post
 }
 
 fn main() {
-    let pool = setup_postgres("postgres://postgres@localhost", 16, 4);
+    let file_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 16, 4);
+    let articles_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 16, 4);
+    let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 16, 4);
     let mut router = Router::new();
-    file::register_handlers(pool, &mut router);
+    file::register_handlers(file_db, &mut router);
+    article::register_handlers(articles_db, &mut router);
 
     http_listen(router);
 }

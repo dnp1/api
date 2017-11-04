@@ -15,3 +15,7 @@ r2d2="*"
 r2d2_postgres="*"
 handlebars-iron="*"
 rustc-serialize = "*"
+
+
+[dependencies.bodyparser]
+git = "https://github.com/iron/body-parser.git"
