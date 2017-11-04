@@ -3,9 +3,10 @@ name = "api"
 version = "0.1.0"
 authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
-
+#[dependencies.iron]
+#    git = "https://github.com/iron/iron.git"
 [dependencies]
-iron="*"
+iron="0.5.1"
 persistent="*"
 router = "*"
 mount = "*"
@@ -16,6 +17,8 @@ r2d2_postgres="*"
 handlebars-iron="*"
 rustc-serialize = "*"
 
+[dependencies.params]
+git = "https://github.com/iron/params.git"
 
 [dependencies.bodyparser]
 git = "https://github.com/iron/body-parser.git"

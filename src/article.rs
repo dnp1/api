@@ -1,9 +1,3 @@
-extern crate iron;
-extern crate router;
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-
 use iron::prelude::Response;
 use iron::prelude::Request;
 use iron::prelude::IronResult;
@@ -25,18 +19,22 @@ struct ArticleList { db: Arc<Pool<PostgresConnectionManager>> }
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router) {
     let db = Arc::new(db);
     router.get("/article", ArticleList { db: db.clone() }, "article_list");
-    router.get("/article/:article_id", ArticleRead{db: db.clone()}, "article_read");
-    router.get("/article/:article_id/tag", ArticleTagList{db: db.clone()}, "article_tag_list");
-    router.get("/article/:article_id/comment", ArticleCommentList{db: db.clone()}, "article_comment_list");
-    router.get("/article/:article_id/comment/:comment_id", ArticleCommentRead{db: db.clone()}, "article_comment_read");
-    router.post("/article/:article_id/comment", ArticleCommentCreate{db: db.clone()}, "article_comment_create");
+    router.get("/article/:article_id", ArticleRead { db: db.clone() }, "article_read");
+    router.get("/article/:article_id/tag", ArticleTagList { db: db.clone() }, "article_tag_list");
+    router.get("/article/:article_id/comment", ArticleCommentList { db: db.clone() }, "article_comment_list");
+    router.get("/article/:article_id/comment/:comment_id", ArticleCommentRead { db: db.clone() }, "article_comment_read");
+    router.post("/article/:article_id/comment", ArticleCommentCreate { db: db.clone() }, "article_comment_create");
 }
 
 impl Handler for ArticleList {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => Ok(Response::with((status::Ok, "")))
+            Ok(connection) => {
+                //                req.get_ref()
+                connection.query("SELECT * FROM article_list($1, 2)", &[]);
+                Ok(Response::with((status::Ok, "")))
+            }
         }
     }
 }

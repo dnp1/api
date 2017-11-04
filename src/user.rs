@@ -1,9 +1,3 @@
-extern crate iron;
-extern crate router;
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-
 use iron::prelude::Response;
 use iron::prelude::Request;
 use iron::prelude::IronResult;

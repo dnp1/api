@@ -4,6 +4,7 @@ use std::time::Duration;
 //Web framework
 extern crate iron;
 extern crate router;
+extern crate params;
 
 use iron::prelude::*;
 use iron::Timeouts;
@@ -33,6 +34,7 @@ fn http_listen(router: Router) {
         read: Some(Duration::from_secs(10)),
         write: Some(Duration::from_secs(10))
     };
+    println!("helllo");
     iron.http("localhost:3000").unwrap();
 }
 
