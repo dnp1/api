@@ -41,13 +41,17 @@ impl Handler for FileCreate {
                     Ok(params) => {
                         let file = params.find(&["file"]);
                         if let Some(file) = file {
-                            if let Ok(mut buffer) = File::create("foo.txt") {
-                                buffer.write(b"some bytes");
+                            if let Value::File(ref file) = *file {
+                                return match file.open() {
+                                    Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
+                                    Ok(file) => {
+                                        Ok(Response::with((status::Ok , "csdsa")))
+                                    }
+                                }
                             }
-                            Ok(Response::with((status::Ok , "")))
-                        } else {
-                            Ok(Response::with((status::BadRequest , "")))
                         }
+                        Ok(Response::with((status::BadRequest , "")))
+
                     }
                 }
             }
