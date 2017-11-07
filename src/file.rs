@@ -48,7 +48,12 @@ impl Handler for FileCreate {
                 let file_id = match self.db.get() {
                     Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                     Ok(db) => {
-                        db.query("SELECT create_file($1, $2, $3, $4)", &[&file.filename, &file.content_type.to_string(), &(file.size as i64)])
+                        db.query(
+                            "SELECT create_file($1, $2, $3, $4)",
+                            &[&file.filename,
+                                &file.content_type.to_string(),
+                                &(file.size as i64)]
+                        )
                     }
                 };
                 Ok(Response::with((status::Ok, "csdsa")))
