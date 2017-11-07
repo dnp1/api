@@ -16,6 +16,10 @@ r2d2="*"
 r2d2_postgres="*"
 handlebars-iron="*"
 rustc-serialize = "*"
+frank_jwt = "2.5.1"
+serde = "1.0.19"
+serde_json= "*"
+serde_derive="*"
 
 [dependencies.params]
 git = "https://github.com/iron/params.git"

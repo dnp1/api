@@ -32,39 +32,37 @@ struct FileCreate { db: Arc<Pool<PostgresConnectionManager>> }
 
 impl Handler for FileCreate {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        match self.db.get() {
-            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => {
-                let params = req.get_ref::<Params>();
-                match params {
-                    Err(err) => Ok(Response::with((status::BadRequest, err.description()))),
-                    Ok(params) => {
-                        let file = params.find(&["file"]);
-                        if let Some(file) = file {
-                            if let Value::File(ref file) = *file {
-                                return match file.open() {
-                                    Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
-                                    Ok(file) => {
-                                        Ok(Response::with((status::Ok , "csdsa")))
-                                    }
-                                }
-                            }
-                        }
-                        Ok(Response::with((status::BadRequest , "")))
-
-                    }
+        let file = match req.get_ref::<Params>() {
+            Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
+            Ok(params) => match params.find(&["file"]) {
+                Some(file) => match *file {
+                    Value::File(ref file) => file,
+                    _ => return Ok(Response::with((status::BadRequest, "")))
                 }
+                None => return Ok(Response::with((status::BadRequest, "")))
             }
-        }
+        };
+        return match file.open() {
+            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(openedFile) => {
+                let file_id = match self.db.get() {
+                    Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
+                    Ok(db) => {
+                        db.query("SELECT create_file($1, $2, $3, $4)", &[&file.filename, &file.content_type.to_string(), &(file.size as i64)])
+                    }
+                };
+                Ok(Response::with((status::Ok, "csdsa")))
+            }
+        };
     }
 }
+
 
 struct FileRead { db: Arc<Pool<PostgresConnectionManager>> }
 
 impl Handler for FileRead {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
         match self.db.get() {
-
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => Ok(Response::with((status::Ok, "")))
         }

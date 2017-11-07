@@ -1,5 +1,17 @@
+//JSON
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+extern crate serde_json;
+
 //STD
 use std::time::Duration;
+
+//JWT
+extern crate frank_jwt;
+
+
 
 //Web framework
 extern crate iron;
