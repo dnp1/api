@@ -42,21 +42,27 @@ impl Handler for FileCreate {
                 None => return Ok(Response::with((status::BadRequest, "")))
             }
         };
-        return match file.open() {
-            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(openedFile) => {
-                let file_id = match self.db.get() {
-                    Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-                    Ok(db) => {
-                        db.query(
-                            "SELECT create_file($1, $2, $3, $4)",
-                            &[&file.filename,
-                                &file.content_type.to_string(),
-                                &(file.size as i64)]
-                        )
+        let opened_file =  match file.open() {
+            Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
+            Ok(opened_file) => opened_file,
+        };
+
+        let file_id = match self.db.get() {
+            Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(db) => {
+                match db.query(
+                    "SELECT create_file($1, $2, $3, $4)",
+                    &[
+                        &file.filename,
+                        &file.content_type.to_string(),
+                        &(file.size as i64)
+                    ]
+                ) {
+                    Err(e) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
+                    Ok(rows) => {
+                        let row = rows.get(0)
                     }
-                };
-                Ok(Response::with((status::Ok, "csdsa")))
+                }
             }
         };
     }

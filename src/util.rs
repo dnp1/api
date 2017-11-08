@@ -5,7 +5,8 @@ pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> &'s str {
     return req.extensions.get::<Router>().unwrap().find(name).unwrap_or("/");
 }
 
-use frank_jwt::{Header, Payload, Algorithm, encode, decode};
+use jwt::{encode, decode, Header, Algorithm, Validation};
+use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json;
@@ -19,29 +20,25 @@ struct Session {
 
 const PAYLOAD_SESSION_KEY: &'static str = "session";
 
-fn create_session_payload(secret: &str, session: &mut Session) -> String {
-    let mut payload = Payload::new();
-
+fn create_session_payload(secret: &str, session: &mut Session) -> Result<String> {
     let expiration = SystemTime::now() + Duration::from_secs(2 ^ 17);
     session.expiration = expiration.duration_since(UNIX_EPOCH).unwrap().as_secs();
-    payload.insert(PAYLOAD_SESSION_KEY.to_string(), serde_json::to_string(&session).unwrap());
-
     let header = Header::new(Algorithm::HS512);
-    return encode(header, secret.to_string(), payload.clone());
+    return encode(&header, &session, secret.as_ref());
 }
 
 fn decode_session_payload(token: &str, secret: &str) -> Option<Session> {
-    let result = decode(
-        token.to_string(),
-        secret.to_string(),
-        Algorithm::HS512);
+    let result = decode::<Session>(
+        token.as_ref(),
+        secret.as_ref(),
+        &Validation::default());
     match result {
         Err(_) => None,
-        Ok((_, data)) => {
-            match data.get(PAYLOAD_SESSION_KEY) {
-                None => None,
-                Some(s) => serde_json::from_str(&s).unwrap()
-            }
+        Ok(data) => {
+            Some(data.claims)
         }
     }
 }
+
+trait FileSave {}
+

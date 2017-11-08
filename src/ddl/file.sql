@@ -1,3 +1,4 @@
+\c "file"
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE "user" (
@@ -54,9 +55,9 @@ WHERE mime = mime_;
 $$ LANGUAGE SQL STRICT;
 
 CREATE OR REPLACE FUNCTION create_file(filename_ VARCHAR(255), size_ INT, mime VARCHAR(255), external_id_ UUID)
-  RETURNS INT AS
+  RETURNS UUID AS
 $$
 INSERT INTO "file" (filename, size, file_type_id, creator_id)
 VALUES (filename_, size_, get_file_type_id(mime), get_user_id(external_id_))
-RETURNING id;
+RETURNING "file".external_id;
 $$ LANGUAGE SQL STRICT;

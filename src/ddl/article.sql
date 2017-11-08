@@ -1,3 +1,4 @@
+\c "article"
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE "user" (

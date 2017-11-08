@@ -9,7 +9,7 @@ extern crate serde_json;
 use std::time::Duration;
 
 //JWT
-extern crate frank_jwt;
+extern crate jsonwebtoken as jwt;
 
 
 
@@ -46,7 +46,6 @@ fn http_listen(router: Router) {
         read: Some(Duration::from_secs(10)),
         write: Some(Duration::from_secs(10))
     };
-    println!("helllo");
     iron.http("localhost:3000").unwrap();
 }
 

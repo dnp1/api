@@ -3,26 +3,24 @@ name = "api"
 version = "0.1.0"
 authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
-#[dependencies.iron]
-#    git = "https://github.com/iron/iron.git"
 [dependencies]
-iron="0.5.1"
+iron="^0.5"
+router="^0.5"
+params="*"
+bodyparser="*"
 persistent="*"
-router = "*"
-mount = "*"
+mount="*"
 staticfile="*"
-postgres = "*"
+
+
+postgres= "*"
 r2d2="*"
 r2d2_postgres="*"
 handlebars-iron="*"
 rustc-serialize = "*"
-frank_jwt = "2.5.1"
+jsonwebtoken="3"
 serde = "1.0.19"
 serde_json= "*"
 serde_derive="*"
+uuid = { version = "0.4", features = ["serde", "v4"] }
 
-[dependencies.params]
-git = "https://github.com/iron/params.git"
-
-[dependencies.bodyparser]
-git = "https://github.com/iron/body-parser.git"
