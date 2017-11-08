@@ -13,7 +13,7 @@ mount="*"
 staticfile="*"
 
 
-postgres= "*"
+postgres= { version = "*", features = ["with-uuid"] }
 r2d2="*"
 r2d2_postgres="*"
 handlebars-iron="*"
@@ -22,5 +22,5 @@ jsonwebtoken="3"
 serde = "1.0.19"
 serde_json= "*"
 serde_derive="*"
-uuid = { version = "0.4", features = ["serde", "v4"] }
+uuid = { version = " ^0.5", features = ["serde", "v4"] }
 

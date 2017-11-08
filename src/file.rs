@@ -19,7 +19,7 @@ use r2d2_postgres::PostgresConnectionManager;
 use std::io::prelude::*;
 //use std::io::Error;
 use std::fs::File;
-
+use uuid::Uuid;
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router) {
     let db = Arc::new(db);
@@ -47,24 +47,26 @@ impl Handler for FileCreate {
             Ok(opened_file) => opened_file,
         };
 
-        let file_id = match self.db.get() {
+        let file_id: Uuid = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(db) => {
                 match db.query(
-                    "SELECT create_file($1, $2, $3, $4)",
+                    "SELECT create_file($1, $2, $3, $4) AS id",
                     &[
                         &file.filename,
                         &file.content_type.to_string(),
                         &(file.size as i64)
                     ]
                 ) {
-                    Err(e) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
+                    Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                     Ok(rows) => {
-                        let row = rows.get(0)
+                        let row = &rows.get(0);
+                        row.get("id")
                     }
                 }
             }
         };
+        Ok(Response::with((status::ServiceUnavailable, "")))
     }
 }
 

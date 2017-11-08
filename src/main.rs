@@ -11,7 +11,8 @@ use std::time::Duration;
 //JWT
 extern crate jsonwebtoken as jwt;
 
-
+//uuid
+extern crate uuid;
 
 //Web framework
 extern crate iron;

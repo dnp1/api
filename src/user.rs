@@ -14,10 +14,6 @@ use r2d2_postgres::PostgresConnectionManager;
 use util;
 
 
-
-
-
-
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router) {
     let db = Arc::new(db);
     router.put("/user/:user_id/avatar", UserAvatarUpdate { db: db.clone() }, "user_avatar_update");

@@ -18,8 +18,6 @@ struct Session {
     expiration: u64,
 }
 
-const PAYLOAD_SESSION_KEY: &'static str = "session";
-
 fn create_session_payload(secret: &str, session: &mut Session) -> Result<String> {
     let expiration = SystemTime::now() + Duration::from_secs(2 ^ 17);
     session.expiration = expiration.duration_since(UNIX_EPOCH).unwrap().as_secs();
