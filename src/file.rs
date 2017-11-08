@@ -21,14 +21,22 @@ use std::io::prelude::*;
 use std::fs::File;
 use uuid::Uuid;
 
-pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router) {
+use util::SessionManager;
+
+pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router, sm : Arc<SessionManager>) {
     let db = Arc::new(db);
-    r.post("/file", FileCreate { db: db.clone() }, "file_create");
-    r.get("/file", FileRead { db: db.clone() }, "file_read");
-    r.delete("/file", FileDelete { db: db.clone() }, "file_delete");
+    let file_read = FileRead { db: db.clone(), sm: sm.clone() };
+    let file_create = FileCreate { db: db.clone(), sm: sm.clone() };
+    let file_delete = FileDelete { db: db.clone(), sm: sm.clone() };
+    r.post("/file", file_create, "file_create");
+    r.get("/file", file_read, "file_read");
+    r.delete("/file", file_delete, "file_delete");
 }
 
-struct FileCreate { db: Arc<Pool<PostgresConnectionManager>> }
+struct FileCreate {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for FileCreate {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
@@ -71,7 +79,10 @@ impl Handler for FileCreate {
 }
 
 
-struct FileRead { db: Arc<Pool<PostgresConnectionManager>> }
+struct FileRead {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for FileRead {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
@@ -82,14 +93,18 @@ impl Handler for FileRead {
     }
 }
 
-struct FileDelete { db: Arc<Pool<PostgresConnectionManager>> }
+struct FileDelete {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for FileDelete {
-    fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        match self.db.get() {
-            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => Ok(Response::with((status::Ok, "")))
-        }
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let session = match self.sm.get_request_session(req) {
+            None => return Ok(Response::with((status::Forbidden, ""))),
+            Some(session) => session
+        };
+        Ok(Response::with((status::Ok, "")))
     }
 }
 
