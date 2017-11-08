@@ -14,9 +14,15 @@ use serde_json;
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
-    session_id: i32,
-    user_id: Option<i32>,
+    session_id: i64,
+    pub user_id: Option<i32>,
     expiration: u64,
+}
+
+impl Session {
+    pub fn new(session_id: i64) -> Session {
+        Session { session_id, user_id: None, expiration: 0}
+    }
 }
 
 pub struct SessionManager {
@@ -29,8 +35,9 @@ const EXPIRATION_TIME: u64 = 3 * 24 * 60 * 60;
 
 impl SessionManager {
     pub fn new(secret: &str) -> SessionManager {
+        let header = Header::new(Algorithm::HS512);
         SessionManager {
-            header: Header::new(Algorithm::HS512),
+            header,
             secret: secret.to_owned()
         }
     }
@@ -58,7 +65,6 @@ impl SessionManager {
             None => None,
             Some(value) => self.decode_session_payload(value),
         }
-
     }
 }
 

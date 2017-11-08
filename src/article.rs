@@ -13,17 +13,21 @@ use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 
 use util;
+use util::SessionManager;
 
-struct ArticleList { db: Arc<Pool<PostgresConnectionManager>> }
+struct ArticleList {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
-pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router) {
+pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm : Arc<SessionManager>) {
     let db = Arc::new(db);
-    router.get("/article", ArticleList { db: db.clone() }, "article_list");
-    router.get("/article/:article_id", ArticleRead { db: db.clone() }, "article_read");
-    router.get("/article/:article_id/tag", ArticleTagList { db: db.clone() }, "article_tag_list");
-    router.get("/article/:article_id/comment", ArticleCommentList { db: db.clone() }, "article_comment_list");
-    router.get("/article/:article_id/comment/:comment_id", ArticleCommentRead { db: db.clone() }, "article_comment_read");
-    router.post("/article/:article_id/comment", ArticleCommentCreate { db: db.clone() }, "article_comment_create");
+    router.get("/article", ArticleList { db: db.clone(), sm: sm.clone() }, "article_list");
+    router.get("/article/:article_id", ArticleRead { db: db.clone(), sm: sm.clone() }, "article_read");
+    router.get("/article/:article_id/tag", ArticleTagList { db: db.clone(), sm: sm.clone() }, "article_tag_list");
+    router.get("/article/:article_id/comment", ArticleCommentList { db: db.clone(), sm: sm.clone() }, "article_comment_list");
+    router.get("/article/:article_id/comment/:comment_id", ArticleCommentRead { db: db.clone(), sm: sm.clone() }, "article_comment_read");
+    router.post("/article/:article_id/comment", ArticleCommentCreate { db: db.clone(), sm: sm.clone() }, "article_comment_create");
 }
 
 impl Handler for ArticleList {
@@ -39,7 +43,10 @@ impl Handler for ArticleList {
     }
 }
 
-struct ArticleRead { db: Arc<Pool<PostgresConnectionManager>> }
+struct ArticleRead {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for ArticleRead {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
@@ -52,7 +59,10 @@ impl Handler for ArticleRead {
 }
 
 
-struct ArticleTagList { db: Arc<Pool<PostgresConnectionManager>> }
+struct ArticleTagList {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for ArticleTagList {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
@@ -64,7 +74,10 @@ impl Handler for ArticleTagList {
     }
 }
 
-struct ArticleCommentRead { db: Arc<Pool<PostgresConnectionManager>> }
+struct ArticleCommentRead {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for ArticleCommentRead {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
@@ -76,7 +89,10 @@ impl Handler for ArticleCommentRead {
     }
 }
 
-struct ArticleCommentList { db: Arc<Pool<PostgresConnectionManager>> }
+struct ArticleCommentList {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for ArticleCommentList {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
@@ -89,7 +105,10 @@ impl Handler for ArticleCommentList {
     }
 }
 
-struct ArticleCommentCreate { db: Arc<Pool<PostgresConnectionManager>> }
+struct ArticleCommentCreate {
+    db: Arc<Pool<PostgresConnectionManager>>,
+    sm: Arc<SessionManager>,
+}
 
 impl Handler for ArticleCommentCreate {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {

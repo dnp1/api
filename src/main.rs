@@ -66,11 +66,12 @@ fn main() {
     let sm = util::SessionManager::new("sadnash dsa das".to_owned().as_ref());
     let file_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 10, 10);
     let articles_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 10, 10);
-    let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 10, 10);
+    let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/user", 10, 10);
     let mut router = Router::new();
-    file::register_handlers(file_db, &mut router, Arc::from(sm));
-    article::register_handlers(articles_db, &mut router);
-    user::register_handlers(user_db, &mut router);
+    let sm = Arc::from(sm);
+    file::register_handlers(file_db, &mut router, sm.clone());
+    article::register_handlers(articles_db, &mut router, sm.clone());
+    user::register_handlers(user_db, &mut router, sm.clone());
 
     http_listen(router);
 }

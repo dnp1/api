@@ -25,6 +25,7 @@ use util::SessionManager;
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router, sm : Arc<SessionManager>) {
     let db = Arc::new(db);
+
     let file_read = FileRead { db: db.clone(), sm: sm.clone() };
     let file_create = FileCreate { db: db.clone(), sm: sm.clone() };
     let file_delete = FileDelete { db: db.clone(), sm: sm.clone() };
@@ -40,6 +41,14 @@ struct FileCreate {
 
 impl Handler for FileCreate {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        //TODO:unify this boiler plate
+        let user_id = match self.sm.get_request_session(req) {
+            None => return Ok(Response::with((status::Unauthorized, ""))),
+            Some(session) => match session.user_id {
+                None => return Ok(Response::with((status::Forbidden, ""))),
+                Some(user_id) => user_id
+            }
+        };
         let file = match req.get_ref::<Params>() {
             Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
             Ok(params) => match params.find(&["file"]) {
@@ -63,7 +72,8 @@ impl Handler for FileCreate {
                     &[
                         &file.filename,
                         &file.content_type.to_string(),
-                        &(file.size as i64)
+                        &(file.size as i64),
+                        &user_id,
                     ]
                 ) {
                     Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -101,8 +111,11 @@ struct FileDelete {
 impl Handler for FileDelete {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let session = match self.sm.get_request_session(req) {
-            None => return Ok(Response::with((status::Forbidden, ""))),
-            Some(session) => session
+            None => return Ok(Response::with((status::Unauthorized, ""))),
+            Some(session) => match session.user_id {
+                None => return Ok(Response::with((status::Forbidden, ""))),
+                Some(user_id) => user_id
+            }
         };
         Ok(Response::with((status::Ok, "")))
     }
