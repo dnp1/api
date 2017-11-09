@@ -23,32 +23,23 @@ use uuid::Uuid;
 
 use util::{SessionManager, Session, SessionHandler, SessionHandlerBox};
 
-pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router, sm : Arc<SessionManager>) {
+pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router, sm: Arc<SessionManager>) {
     let db = Arc::new(db);
 
-    let file_read = FileRead { db: db.clone(), sm: sm.clone() };
-    let file_create = FileCreate { db: db.clone(), sm: sm.clone() };
-    let file_delete = FileDelete { db: db.clone(), sm: sm.clone() };
-    r.post("/file", file_create, "file_create");
-    r.get("/file", file_read, "file_read");
-    r.delete("/file", SessionHandlerBox {s: file_delete}, "file_delete");
+    let file_read = FileRead { db: db.clone() };
+    let file_create = FileCreate { db: db.clone() };
+    let file_delete = FileDelete { db: db.clone() };
+    r.post("/file", SessionHandlerBox { handler: file_create, sm: sm.clone() }, "file_create");
+    r.get("/file", SessionHandlerBox { handler: file_read, sm: sm.clone() }, "file_read");
+    r.delete("/file", SessionHandlerBox { handler: file_delete, sm: sm.clone() }, "file_delete");
 }
 
 struct FileCreate {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for FileCreate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        //TODO:unify this boiler plate
-        let user_id = match self.sm.get_request_session(req) {
-            None => return Ok(Response::with((status::Unauthorized, ""))),
-            Some(session) => match session.user_id {
-                None => return Ok(Response::with((status::Forbidden, ""))),
-                Some(user_id) => user_id
-            }
-        };
+impl SessionHandler for FileCreate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let file = match req.get_ref::<Params>() {
             Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
             Ok(params) => match params.find(&["file"]) {
@@ -59,7 +50,7 @@ impl Handler for FileCreate {
                 None => return Ok(Response::with((status::BadRequest, "")))
             }
         };
-        let opened_file =  match file.open() {
+        let opened_file = match file.open() {
             Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
             Ok(opened_file) => opened_file,
         };
@@ -73,7 +64,7 @@ impl Handler for FileCreate {
                         &file.filename,
                         &file.content_type.to_string(),
                         &(file.size as i64),
-                        &user_id,
+                        &session.user_id,
                     ]
                 ) {
                     Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -91,11 +82,10 @@ impl Handler for FileCreate {
 
 struct FileRead {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for FileRead {
-    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+impl SessionHandler for FileRead {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => Ok(Response::with((status::Ok, "")))
@@ -105,13 +95,9 @@ impl Handler for FileRead {
 
 struct FileDelete {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
 impl SessionHandler for FileDelete {
-    fn session_manager(&self) -> &SessionManager {
-        self.sm.as_ref()
-    }
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         Ok(Response::with((status::Ok, "")))
     }

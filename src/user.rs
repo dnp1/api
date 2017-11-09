@@ -228,7 +228,6 @@ impl Handler for UserSessionCreate {
         } else {
             Ok(Response::with((status::ServiceUnavailable, "")))
         }
-//        self.sm.
     }
 }
 

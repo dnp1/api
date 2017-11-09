@@ -69,17 +69,23 @@ impl SessionManager {
 }
 
 pub trait SessionHandler {
-    fn session_manager(&self) -> &SessionManager;
     fn authenticated(&self) -> bool {
         false
     }
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response>;
+}
 
+pub struct SessionHandlerBox<T> {
+    pub handler: T,
+    pub sm: Arc<SessionManager>
+}
+
+impl <T> Handler for SessionHandlerBox<T> where T: SessionHandler +  Send + Sync + 'static {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let mut session = match self.session_manager().get_request_session(req) {
+        let mut session = match self.sm.get_request_session(req) {
             None => return Ok(Response::with((status::Unauthorized, ""))),
             Some(session) => {
-                if self.authenticated() {
+                if self.handler.authenticated() {
                     if let None = session.user_id {
                         return Ok(Response::with((status::Forbidden, "")));
                     }
@@ -87,16 +93,6 @@ pub trait SessionHandler {
                 session
             }
         };
-        self.handle_session(&mut session, req)
-    }
-}
-
-pub struct SessionHandlerBox<T> {
-    pub s: T
-}
-
-impl <T> Handler for SessionHandlerBox<T> where T: SessionHandler +  Send + Sync + 'static {
-    fn handle(&self, r: &mut Request) -> IronResult<Response> {
-        self.s.handle(r)
+        self.handler.handle_session(&mut session, req)
     }
 }
