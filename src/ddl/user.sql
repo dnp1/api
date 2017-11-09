@@ -105,8 +105,9 @@ FROM "email"
 WHERE address = email_;
 $$ LANGUAGE SQL STRICT;
 
+
 CREATE OR REPLACE FUNCTION authenticate(session_id_ BIGINT, email_ TEXT, password_ TEXT, cidr_ CIDR)
-  RETURNS BOOLEAN AS
+  RETURNS UUID AS
 $$
 WITH res AS (
     SELECT
@@ -127,13 +128,13 @@ INSERT INTO authentication_attempt (host_address, session_id, user_id)
   FROM (SELECT *
         FROM res
         UNION ALL SELECT
-                    NULL,
+                    cidr_,
                     (SELECT id
                      FROM session
                      WHERE id = session_id_),
                     NULL) AS r
   LIMIT 1
-RETURNING user_id IS DISTINCT FROM NULL;
+RETURNING (SELECT "user".external_id FROM "user" WHERE "user".id = user_id);
 $$ LANGUAGE SQL STRICT;
 
 CREATE OR REPLACE FUNCTION create_user(session_id_  BIGINT, email_ TEXT, password_ TEXT, given_name_ TEXT,
@@ -154,13 +155,14 @@ BEGIN
     RAISE EXCEPTION 'INVALID_SESSION %d', session_id_;
     RETURN FALSE;
   END IF;
-  INSERT INTO "user" DEFAULT VALUES RETURNING user_id_;
+  INSERT INTO "user" DEFAULT VALUES RETURNING id INTO user_id_;
 
   INSERT INTO "user_password" ("user_id", "password") VALUES (user_id_, crypt(password_, gen_salt('bf', 12)));
   SELECT get_email_id(email_)
   INTO email_id_;
   INSERT INTO "user_email" ("user_id", "email_id") VALUES (user_id_, email_id_);
   INSERT INTO "user_name" ("user_id", "family_name", "given_name") VALUES (user_id_, family_name_, given_name_);
+  RETURN TRUE;
 END
 $$ LANGUAGE plpgsql;
 
