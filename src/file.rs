@@ -25,7 +25,6 @@ use util::{SessionManager, Session, SessionHandler, SessionHandlerBox};
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router, sm: Arc<SessionManager>) {
     let db = Arc::new(db);
-
     let file_read = FileRead { db: db.clone() };
     let file_create = FileCreate { db: db.clone() };
     let file_delete = FileDelete { db: db.clone() };

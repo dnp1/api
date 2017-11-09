@@ -11,10 +11,10 @@ use router::Router;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util;
-use util::{SessionManager ,Session};
+use util::{SessionManager, Session};
 
 
-pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm : Arc<SessionManager>) {
+pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm: Arc<SessionManager>) {
     let db = Arc::new(db);
     router.put("/user/:user_id/avatar", UserAvatarUpdate { db: db.clone(), sm: sm.clone() }, "user_avatar_update");
     router.get("/user/:user_id/avatar", UserAvatarRead { db: db.clone(), sm: sm.clone() }, "user_avatar_get");
@@ -215,7 +215,7 @@ impl Handler for UserSessionCreate {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => connection
         };
-        let session_id: i64  = match db.query("SELECT create_session() as id", &[]) {
+        let session_id: i64 = match db.query("SELECT create_session() as id", &[]) {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(rows) => {
                 let row = &rows.get(0);

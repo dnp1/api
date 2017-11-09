@@ -9,7 +9,7 @@ pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> &'s str {
 use jwt::{encode, decode, Header, Algorithm, Validation};
 use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use::std::sync::Arc;
+use ::std::sync::Arc;
 use serde_json;
 
 #[derive(Serialize, Deserialize)]
@@ -21,7 +21,7 @@ pub struct Session {
 
 impl Session {
     pub fn new(session_id: i64) -> Session {
-        Session { session_id, user_id: None, expiration: 0}
+        Session { session_id, user_id: None, expiration: 0 }
     }
 }
 
@@ -80,7 +80,7 @@ pub struct SessionHandlerBox<T> {
     pub sm: Arc<SessionManager>
 }
 
-impl <T> Handler for SessionHandlerBox<T> where T: SessionHandler +  Send + Sync + 'static {
+impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync + 'static {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let mut session = match self.sm.get_request_session(req) {
             None => return Ok(Response::with((status::Unauthorized, ""))),
