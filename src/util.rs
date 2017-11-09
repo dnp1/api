@@ -11,11 +11,12 @@ use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ::std::sync::Arc;
 use serde_json;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
     session_id: i64,
-    pub user_id: Option<i32>,
+    pub user_id: Option<Uuid>,
     expiration: u64,
 }
 
