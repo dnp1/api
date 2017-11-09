@@ -6,7 +6,7 @@ use iron::status;
 use iron::Handler;
 use std::sync::Arc;
 use std::error::Error;
-
+use uuid::Uuid;
 use router::Router;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
@@ -25,19 +25,19 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     let user_name_update = UserNameUpdate { db: db.clone() };
     let user_creation_request_create = UserCreationRequestCreate { db: db.clone() };
     let user_create = UserCreate { db: db.clone() };
-    let user_session_create = UserSessionCreate { db: db.clone(), sm : sm.clone()};
+    let user_session_create = SessionCreate { db: db.clone(), sm: sm.clone() };
     let user_password_reset = UserPasswordReset { db: db.clone() };
-    router.put("/user/:user_id/avatar", SessionHandlerBox{handler: user_avatar_update, sm: sm.clone()}, "user_avatar_update");
-    router.get("/user/:user_id/avatar", SessionHandlerBox{handler: user_avatar_read, sm: sm.clone()}, "user_avatar_get");
-    router.get("/user/:user_id/email", SessionHandlerBox{handler: user_email_read, sm: sm.clone()}, "user_email_read");
-    router.post("/user/:user_id/email/update", SessionHandlerBox{handler: user_email_update_request_create, sm: sm.clone()}, "user_email_update_request_create");
-    router.put("/user/:user_id/email", SessionHandlerBox{handler: user_email_update, sm: sm.clone()}, "user_email_update");
-    router.put("/user/:user_id/password", SessionHandlerBox{handler: user_password_update, sm: sm.clone()}, "user_password_update");
-    router.get("/user/:user_id/name", SessionHandlerBox{handler: user_name_read, sm: sm.clone()}, "user_name_read");
-    router.put("/user/:user_id/name", SessionHandlerBox{handler: user_name_update, sm: sm.clone()}, "user_name_update");
-    router.post("/user/sign-up", SessionHandlerBox{handler: user_creation_request_create, sm: sm.clone()}, "user_creation_request_create");
-    router.post("/user", SessionHandlerBox{handler: user_create, sm: sm.clone()}, "user_create");
-    router.post("/user/password-recovery", SessionHandlerBox{handler: user_password_reset, sm: sm.clone()}, "user_password_reset");
+    router.put("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_update, sm: sm.clone() }, "user_avatar_update");
+    router.get("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_read, sm: sm.clone() }, "user_avatar_get");
+    router.get("/user/:user_id/email", SessionHandlerBox { handler: user_email_read, sm: sm.clone() }, "user_email_read");
+    router.post("/user/:user_id/email/update", SessionHandlerBox { handler: user_email_update_request_create, sm: sm.clone() }, "user_email_update_request_create");
+    router.put("/user/:user_id/email", SessionHandlerBox { handler: user_email_update, sm: sm.clone() }, "user_email_update");
+    router.put("/user/:user_id/password", SessionHandlerBox { handler: user_password_update, sm: sm.clone() }, "user_password_update");
+    router.get("/user/:user_id/name", SessionHandlerBox { handler: user_name_read, sm: sm.clone() }, "user_name_read");
+    router.put("/user/:user_id/name", SessionHandlerBox { handler: user_name_update, sm: sm.clone() }, "user_name_update");
+    router.post("/user/sign-up", SessionHandlerBox { handler: user_creation_request_create, sm: sm.clone() }, "user_creation_request_create");
+    router.post("/user", SessionHandlerBox { handler: user_create, sm: sm.clone() }, "user_create");
+    router.post("/user/password-recovery", SessionHandlerBox { handler: user_password_reset, sm: sm.clone() }, "user_password_reset");
     router.post("/session", user_session_create, "session_create");
 }
 
@@ -204,12 +204,12 @@ impl SessionHandler for UserPasswordReset {
 }
 
 
-struct UserSessionCreate {
+struct SessionCreate {
     db: Arc<Pool<PostgresConnectionManager>>,
     sm: Arc<SessionManager>,
 }
 
-impl Handler for UserSessionCreate {
+impl Handler for SessionCreate {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let db = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -231,3 +231,24 @@ impl Handler for UserSessionCreate {
     }
 }
 
+struct Authenticate {
+    db: Arc<Pool<PostgresConnectionManager>>,
+}
+
+impl SessionHandler for Authenticate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+        let user_id: Uuid = match self.db.get() {
+            Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(conn) => match conn.query(
+                "SELECT authenticate($1, $2, $3, $4) as ok",
+                &[]) {
+                Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
+                Ok(rows) => {
+                    rows.get(0).get("")
+                }
+            },
+        };
+        session.user_id = Some(user_id);
+        Ok(Response::with((status::ServiceUnavailable, user_id.simple().to_string())))
+    }
+}
