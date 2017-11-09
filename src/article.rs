@@ -13,25 +13,32 @@ use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 
 use util;
-use util::SessionManager;
+use util::{SessionManager, Session, SessionHandler, SessionHandlerBox};
+
+pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm: Arc<SessionManager>) {
+    let db = Arc::new(db);
+
+    let article_list = ArticleList { db: db.clone() };
+    let article_read = ArticleRead { db: db.clone() };
+    let article_tag_list = ArticleTagList { db: db.clone() };
+    let article_comment_list = ArticleCommentList { db: db.clone() };
+    let article_comment_read = ArticleCommentRead { db: db.clone() };
+    let article_comment_create = ArticleCommentCreate { db: db.clone() };
+
+    router.get("/article", SessionHandlerBox { handler: article_list, sm: sm.clone() }, "article_list");
+    router.get("/article/:article_id", SessionHandlerBox { handler: article_read, sm: sm.clone() }, "article_read");
+    router.get("/article/:article_id/tag", SessionHandlerBox { handler: article_tag_list, sm: sm.clone() }, "article_tag_list");
+    router.get("/article/:article_id/comment", SessionHandlerBox { handler: article_comment_list, sm: sm.clone() }, "article_comment_list");
+    router.get("/article/:article_id/comment/:comment_id", SessionHandlerBox { handler: article_comment_read, sm: sm.clone() }, "article_comment_read");
+    router.post("/article/:article_id/comment", SessionHandlerBox { handler: article_comment_create, sm: sm.clone() }, "article_comment_create");
+}
 
 struct ArticleList {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm : Arc<SessionManager>) {
-    let db = Arc::new(db);
-    router.get("/article", ArticleList { db: db.clone(), sm: sm.clone() }, "article_list");
-    router.get("/article/:article_id", ArticleRead { db: db.clone(), sm: sm.clone() }, "article_read");
-    router.get("/article/:article_id/tag", ArticleTagList { db: db.clone(), sm: sm.clone() }, "article_tag_list");
-    router.get("/article/:article_id/comment", ArticleCommentList { db: db.clone(), sm: sm.clone() }, "article_comment_list");
-    router.get("/article/:article_id/comment/:comment_id", ArticleCommentRead { db: db.clone(), sm: sm.clone() }, "article_comment_read");
-    router.post("/article/:article_id/comment", ArticleCommentCreate { db: db.clone(), sm: sm.clone() }, "article_comment_create");
-}
-
-impl Handler for ArticleList {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for ArticleList {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => {
@@ -45,11 +52,10 @@ impl Handler for ArticleList {
 
 struct ArticleRead {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for ArticleRead {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for ArticleRead {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref article_id = util::get_url_param(req, "article_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -61,11 +67,10 @@ impl Handler for ArticleRead {
 
 struct ArticleTagList {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for ArticleTagList {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for ArticleTagList {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref article_id = util::get_url_param(req, "article_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -76,11 +81,10 @@ impl Handler for ArticleTagList {
 
 struct ArticleCommentRead {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for ArticleCommentRead {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for ArticleCommentRead {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref article_id = util::get_url_param(req, "article_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -91,11 +95,10 @@ impl Handler for ArticleCommentRead {
 
 struct ArticleCommentList {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for ArticleCommentList {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for ArticleCommentList {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref article_id = util::get_url_param(req, "article_id");
         let ref comment_id = util::get_url_param(req, "comment_id");
         match self.db.get() {
@@ -107,11 +110,10 @@ impl Handler for ArticleCommentList {
 
 struct ArticleCommentCreate {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for ArticleCommentCreate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for ArticleCommentCreate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref article_id = util::get_url_param(req, "article_id");
         let ref comment_id = util::get_url_param(req, "comment_id");
         match self.db.get() {

@@ -11,33 +11,43 @@ use router::Router;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util;
-use util::{SessionManager, Session};
-
+use util::{SessionManager, Session, SessionHandler, SessionHandlerBox};
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm: Arc<SessionManager>) {
     let db = Arc::new(db);
-    router.put("/user/:user_id/avatar", UserAvatarUpdate { db: db.clone(), sm: sm.clone() }, "user_avatar_update");
-    router.get("/user/:user_id/avatar", UserAvatarRead { db: db.clone(), sm: sm.clone() }, "user_avatar_get");
-    router.get("/user/:user_id/email", UserEmailRead { db: db.clone(), sm: sm.clone() }, "user_email_read");
-    router.post("/user/:user_id/email/update", UserEmailUpdateRequestCreate { db: db.clone(), sm: sm.clone() }, "user_email_update_request_create");
-    router.put("/user/:user_id/email", UserEmailUpdate { db: db.clone(), sm: sm.clone() }, "user_email_update");
-    router.put("/user/:user_id/password", UserPasswordUpdate { db: db.clone(), sm: sm.clone() }, "user_password_update");
-    router.get("/user/:user_id/name", UserNameRead { db: db.clone(), sm: sm.clone() }, "user_name_read");
-    router.put("/user/:user_id/name", UserNameUpdate { db: db.clone(), sm: sm.clone() }, "user_name_update");
-    router.post("/user/sign-up", UserCreationRequestCreate { db: db.clone(), sm: sm.clone() }, "user_creation_request_create");
-    router.post("/user", UserCreate { db: db.clone(), sm: sm.clone() }, "user_create");
-    router.post("/session", UserSessionCreate { db: db.clone(), sm: sm.clone() }, "session_create");
-    router.post("/user/password-recovery", UserPasswordReset { db: db.clone(), sm: sm.clone() }, "user_password_reset");
+    let user_avatar_update = UserAvatarUpdate { db: db.clone() };
+    let user_avatar_read = UserAvatarRead { db: db.clone() };
+    let user_email_read = UserEmailRead { db: db.clone() };
+    let user_email_update_request_create = UserEmailUpdateRequestCreate { db: db.clone() };
+    let user_email_update = UserEmailUpdate { db: db.clone() };
+    let user_password_update = UserPasswordUpdate { db: db.clone() };
+    let user_name_read = UserNameRead { db: db.clone() };
+    let user_name_update = UserNameUpdate { db: db.clone() };
+    let user_creation_request_create = UserCreationRequestCreate { db: db.clone() };
+    let user_create = UserCreate { db: db.clone() };
+    let user_session_create = UserSessionCreate { db: db.clone(), sm : sm.clone()};
+    let user_password_reset = UserPasswordReset { db: db.clone() };
+    router.put("/user/:user_id/avatar", SessionHandlerBox{handler: user_avatar_update, sm: sm.clone()}, "user_avatar_update");
+    router.get("/user/:user_id/avatar", SessionHandlerBox{handler: user_avatar_read, sm: sm.clone()}, "user_avatar_get");
+    router.get("/user/:user_id/email", SessionHandlerBox{handler: user_email_read, sm: sm.clone()}, "user_email_read");
+    router.post("/user/:user_id/email/update", SessionHandlerBox{handler: user_email_update_request_create, sm: sm.clone()}, "user_email_update_request_create");
+    router.put("/user/:user_id/email", SessionHandlerBox{handler: user_email_update, sm: sm.clone()}, "user_email_update");
+    router.put("/user/:user_id/password", SessionHandlerBox{handler: user_password_update, sm: sm.clone()}, "user_password_update");
+    router.get("/user/:user_id/name", SessionHandlerBox{handler: user_name_read, sm: sm.clone()}, "user_name_read");
+    router.put("/user/:user_id/name", SessionHandlerBox{handler: user_name_update, sm: sm.clone()}, "user_name_update");
+    router.post("/user/sign-up", SessionHandlerBox{handler: user_creation_request_create, sm: sm.clone()}, "user_creation_request_create");
+    router.post("/user", SessionHandlerBox{handler: user_create, sm: sm.clone()}, "user_create");
+    router.post("/user/password-recovery", SessionHandlerBox{handler: user_password_reset, sm: sm.clone()}, "user_password_reset");
+    router.post("/session", user_session_create, "session_create");
 }
 
 
 struct UserAvatarUpdate {
     db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
 }
 
-impl Handler for UserAvatarUpdate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserAvatarUpdate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -47,12 +57,11 @@ impl Handler for UserAvatarUpdate {
 }
 
 struct UserAvatarRead {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserAvatarRead {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserAvatarRead {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -62,12 +71,11 @@ impl Handler for UserAvatarRead {
 }
 
 struct UserEmailRead {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserEmailRead {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserEmailRead {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -77,12 +85,11 @@ impl Handler for UserEmailRead {
 }
 
 struct UserEmailUpdateRequestCreate {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserEmailUpdateRequestCreate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserEmailUpdateRequestCreate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -93,12 +100,11 @@ impl Handler for UserEmailUpdateRequestCreate {
 
 
 struct UserEmailUpdate {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserEmailUpdate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserEmailUpdate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -109,12 +115,11 @@ impl Handler for UserEmailUpdate {
 
 
 struct UserPasswordUpdate {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserPasswordUpdate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserPasswordUpdate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -125,12 +130,11 @@ impl Handler for UserPasswordUpdate {
 
 
 struct UserNameRead {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserNameRead {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserNameRead {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -141,12 +145,11 @@ impl Handler for UserNameRead {
 
 
 struct UserNameUpdate {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserNameUpdate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserNameUpdate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -157,12 +160,11 @@ impl Handler for UserNameUpdate {
 
 
 struct UserCreationRequestCreate {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserCreationRequestCreate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserCreationRequestCreate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -173,12 +175,11 @@ impl Handler for UserCreationRequestCreate {
 
 
 struct UserCreate {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserCreate {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserCreate {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
@@ -189,12 +190,11 @@ impl Handler for UserCreate {
 
 
 struct UserPasswordReset {
-    db: Arc<Pool<PostgresConnectionManager>>,
-    sm: Arc<SessionManager>,
+    db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl Handler for UserPasswordReset {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl SessionHandler for UserPasswordReset {
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref user_id = util::get_url_param(req, "user_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
