@@ -21,7 +21,7 @@ use std::io::prelude::*;
 use std::fs::File;
 use uuid::Uuid;
 
-use util::SessionManager;
+use util::{SessionManager, Session, SessionHandler, SessionHandlerBox};
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router, sm : Arc<SessionManager>) {
     let db = Arc::new(db);
@@ -31,7 +31,7 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Rou
     let file_delete = FileDelete { db: db.clone(), sm: sm.clone() };
     r.post("/file", file_create, "file_create");
     r.get("/file", file_read, "file_read");
-    r.delete("/file", file_delete, "file_delete");
+    r.delete("/file", SessionHandlerBox {s: file_delete}, "file_delete");
 }
 
 struct FileCreate {
@@ -108,17 +108,12 @@ struct FileDelete {
     sm: Arc<SessionManager>,
 }
 
-impl Handler for FileDelete {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let session = match self.sm.get_request_session(req) {
-            None => return Ok(Response::with((status::Unauthorized, ""))),
-            Some(session) => match session.user_id {
-                None => return Ok(Response::with((status::Forbidden, ""))),
-                Some(user_id) => user_id
-            }
-        };
+impl SessionHandler for FileDelete {
+    fn session_manager(&self) -> &SessionManager {
+        self.sm.as_ref()
+    }
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         Ok(Response::with((status::Ok, "")))
     }
 }
-
 

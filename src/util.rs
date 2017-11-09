@@ -1,5 +1,5 @@
 use router::Router;
-use iron::Request;
+use iron::{Request, Response, IronResult, status, Handler};
 use iron::headers::Authorization;
 
 pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> &'s str {
@@ -9,7 +9,7 @@ pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> &'s str {
 use jwt::{encode, decode, Header, Algorithm, Validation};
 use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
+use::std::sync::Arc;
 use serde_json;
 
 #[derive(Serialize, Deserialize)]
@@ -68,6 +68,35 @@ impl SessionManager {
     }
 }
 
+pub trait SessionHandler {
+    fn session_manager(&self) -> &SessionManager;
+    fn authenticated(&self) -> bool {
+        false
+    }
+    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response>;
 
-trait FileSave {}
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let mut session = match self.session_manager().get_request_session(req) {
+            None => return Ok(Response::with((status::Unauthorized, ""))),
+            Some(session) => {
+                if self.authenticated() {
+                    if let None = session.user_id {
+                        return Ok(Response::with((status::Forbidden, "")));
+                    }
+                }
+                session
+            }
+        };
+        self.handle_session(&mut session, req)
+    }
+}
 
+pub struct SessionHandlerBox<T> {
+    pub s: T
+}
+
+impl <T> Handler for SessionHandlerBox<T> where T: SessionHandler +  Send + Sync + 'static {
+    fn handle(&self, r: &mut Request) -> IronResult<Response> {
+        self.s.handle(r)
+    }
+}
