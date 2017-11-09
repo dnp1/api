@@ -197,7 +197,7 @@ CREATE OR REPLACE FUNCTION get_comment_content(comment_id_ UUID)
   RETURNS TEXT AS $$
 SELECT "edition".content
 FROM "comment"
-  INNER JOIN comment_edition edition ON edition.active AND edition.comment_id = comment_id
+  INNER JOIN comment_edition edition ON edition.active AND edition.comment_id = comment.id
 WHERE "comment".external_id = comment_id_ AND "comment".active
 $$ LANGUAGE SQL STRICT IMMUTABLE;
 
