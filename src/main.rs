@@ -19,6 +19,7 @@ extern crate uuid;
 extern crate iron;
 extern crate router;
 extern crate params;
+extern crate bodyparser;
 
 use iron::prelude::*;
 use iron::Timeouts;

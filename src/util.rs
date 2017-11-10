@@ -10,19 +10,18 @@ use jwt::{encode, decode, Header, Algorithm, Validation};
 use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ::std::sync::Arc;
-use serde_json;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
-    session_id: i64,
+    pub id: i64,
     pub user_id: Option<Uuid>,
     expiration: u64,
 }
 
 impl Session {
     pub fn new(session_id: i64) -> Session {
-        Session { session_id, user_id: None, expiration: 0 }
+        Session { id: session_id, user_id: None, expiration: 0 }
     }
 }
 
@@ -84,11 +83,11 @@ pub struct SessionHandlerBox<T> {
 impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync + 'static {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let mut session = match self.sm.get_request_session(req) {
-            None => return Ok(Response::with((status::Unauthorized, ""))),
+            None => return Ok(Response::with((status::NotFound, ""))),
             Some(session) => {
                 if self.handler.authenticated() {
                     if let None = session.user_id {
-                        return Ok(Response::with((status::Forbidden, "")));
+                        return Ok(Response::with((status::Unauthorized, "")));
                     }
                 }
                 session

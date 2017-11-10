@@ -1,9 +1,8 @@
-use iron::prelude::Response;
-use iron::prelude::Request;
-use iron::prelude::IronResult;
+use iron::prelude::*;
 use iron::status;
-
 use iron::Handler;
+
+use bodyparser;
 use std::sync::Arc;
 use std::error::Error;
 use uuid::Uuid;
@@ -27,6 +26,8 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     let user_create = UserCreate { db: db.clone() };
     let user_session_create = SessionCreate { db: db.clone(), sm: sm.clone() };
     let user_password_reset = UserPasswordReset { db: db.clone() };
+    let authenticate = Authenticate { db: db.clone() };
+
     router.put("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_update, sm: sm.clone() }, "user_avatar_update");
     router.get("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_read, sm: sm.clone() }, "user_avatar_get");
     router.get("/user/:user_id/email", SessionHandlerBox { handler: user_email_read, sm: sm.clone() }, "user_email_read");
@@ -39,6 +40,7 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     router.post("/user", SessionHandlerBox { handler: user_create, sm: sm.clone() }, "user_create");
     router.post("/user/password-recovery", SessionHandlerBox { handler: user_password_reset, sm: sm.clone() }, "user_password_reset");
     router.post("/session", user_session_create, "session_create");
+        router.post("/authenticate", SessionHandlerBox{ handler: authenticate, sm: sm.clone()}, "session_authenticate");
 }
 
 
@@ -235,20 +237,42 @@ struct Authenticate {
     db: Arc<Pool<PostgresConnectionManager>>,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+struct AuthenticateBody {
+    email: String,
+    password: String
+}
+
 impl SessionHandler for Authenticate {
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
-        let user_id: Uuid = match self.db.get() {
+        let body = req.get::<bodyparser::Struct<AuthenticateBody>>();
+        let body = match body {
+            Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(None) => return Ok(Response::with((status::ServiceUnavailable, "empty body"))) ,
+            Ok(Some(struct_body)) => struct_body,
+        };
+
+        let user_id: Option<Uuid> = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(conn) => match conn.query(
-                "SELECT authenticate($1, $2, $3, $4) as ok",
-                &[]) {
+                "SELECT authenticate($1, $2, $3, '192.168.43.37') as ok",
+                &[&session.id, &body.email, &body.password]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => {
-                    rows.get(0).get("")
+                    if rows.len() > 0 {
+                        rows.get(0).get("ok")
+                    } else {
+                        None
+                    }
                 }
             },
         };
-        session.user_id = Some(user_id);
-        Ok(Response::with((status::ServiceUnavailable, user_id.simple().to_string())))
+        if let Some(id) = user_id {
+            session.user_id = user_id;
+            Ok(Response::with((status::Ok, id.simple().to_string())))
+        } else {
+            Ok(Response::with((status::Unauthorized, "")))
+        }
+
     }
 }
