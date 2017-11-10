@@ -1,6 +1,7 @@
 use router::Router;
 use iron::{Request, Response, IronResult, status, Handler};
-use iron::headers::Authorization;
+use iron::headers::{Authorization, SetCookie, Cookie};
+
 
 pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> &'s str {
     return req.extensions.get::<Router>().unwrap().find(name).unwrap_or("/");
@@ -83,16 +84,31 @@ pub struct SessionHandlerBox<T> {
 impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync + 'static {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let mut session = match self.sm.get_request_session(req) {
-            None => return Ok(Response::with((status::NotFound, ""))),
+            None => {
+                let result = Response::with((status::Unauthorized, "You must create a session"));
+                return Ok(result);
+            },
             Some(session) => {
                 if self.handler.authenticated() {
                     if let None = session.user_id {
-                        return Ok(Response::with((status::Unauthorized, "")));
+                        let result = Response::with((status::Unauthorized, "You must authenticate with an user"));
+                        return Ok(result);
                     }
                 }
                 session
             }
         };
-        self.handler.handle_session(&mut session, req)
+        match self.handler.handle_session(&mut session, req) {
+            Ok(mut response) =>  {
+                match self.sm.create_session_payload(&mut session) {
+                    Err(err) => Ok(Response::with((status::InternalServerError, "ooops"))),
+                    Ok(payload) => {
+                        response.headers.set(Authorization(payload));
+                        Ok(response)
+                    }
+                }
+            },
+            Err(err) => Err(err),
+        }
     }
 }
