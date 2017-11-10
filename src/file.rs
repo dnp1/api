@@ -7,7 +7,6 @@ use params::Value;
 
 //use iron::IronError;
 use iron::prelude::*;
-use iron::Handler;
 use std::sync::Arc;
 use std::error::Error;
 
@@ -16,9 +15,7 @@ use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 
 
-use std::io::prelude::*;
 //use std::io::Error;
-use std::fs::File;
 use uuid::Uuid;
 
 use util::{SessionManager, Session, SessionHandler, SessionHandlerBox};

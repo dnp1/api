@@ -1,6 +1,6 @@
 use router::Router;
 use iron::{Request, Response, IronResult, status, Handler};
-use iron::headers::{Authorization, SetCookie, Cookie};
+use iron::headers::Authorization;
 
 
 pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> &'s str {
@@ -87,7 +87,7 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
             None => {
                 let result = Response::with((status::Unauthorized, "You must create a session"));
                 return Ok(result);
-            },
+            }
             Some(session) => {
                 if self.handler.authenticated() {
                     if let None = session.user_id {
@@ -99,7 +99,7 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
             }
         };
         match self.handler.handle_session(&mut session, req) {
-            Ok(mut response) =>  {
+            Ok(mut response) => {
                 match self.sm.create_session_payload(&mut session) {
                     Err(err) => Ok(Response::with((status::InternalServerError, "ooops"))),
                     Ok(payload) => {
@@ -107,7 +107,7 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
                         Ok(response)
                     }
                 }
-            },
+            }
             Err(err) => Err(err),
         }
     }

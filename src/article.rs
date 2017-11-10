@@ -4,7 +4,6 @@ use iron::prelude::IronResult;
 use iron::status;
 //use iron::IronError;
 
-use iron::Handler;
 use std::sync::Arc;
 use std::error::Error;
 
