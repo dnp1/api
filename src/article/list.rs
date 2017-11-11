@@ -11,13 +11,14 @@ use uuid::Uuid;
 use postgres::rows;
 //use serde;
 use serde_json;
+use chrono::NaiveDateTime;
 
 #[derive(Clone, Serialize, Deserialize)]
 struct Resp {
     id: Uuid,
     title: String,
-    publication_datetime: i64,
-    edition_datetime: i64,
+    publication_datetime: NaiveDateTime,
+    edition_datetime: NaiveDateTime,
 }
 
 impl Resp {
