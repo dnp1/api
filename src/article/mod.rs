@@ -12,6 +12,7 @@ mod comment_read;
 mod list;
 mod read;
 mod tag_list;
+mod common;
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm: Arc<SessionManager>) {
     let db = Arc::new(db);

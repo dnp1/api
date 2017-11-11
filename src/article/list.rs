@@ -12,25 +12,9 @@ use postgres::rows;
 //use serde;
 use serde_json;
 use chrono::NaiveDateTime;
+use article::common::Article;
 
-#[derive(Clone, Serialize, Deserialize)]
-struct Resp {
-    id: Uuid,
-    title: String,
-    publication_datetime: NaiveDateTime,
-    edition_datetime: NaiveDateTime,
-}
 
-impl Resp {
-    fn from_row(row: &rows::Row) -> Resp {
-        return Resp {
-            id: row.get("id"),
-            title: row.get("title"),
-            publication_datetime: row.get("publication_datetime"),
-            edition_datetime: row.get("edition_datetime")
-        };
-    }
-}
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
@@ -41,13 +25,13 @@ const FETCH_LENGTH: i32 = 10;
 
 impl SessionHandler for Handler {
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
-        let after_uuid: Option<Uuid> = None;
-        let resp : Vec<Resp> = match self.db.get() {
+        let after_uuid: Option<Uuid> = None; //TODO:get_query_param
+        let resp : Vec<Article> = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query("SELECT * FROM get_article_list($1, $2)",
                                                      &[&FETCH_LENGTH, &after_uuid]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
-                Ok(rows) => (&rows).iter().map(|row| Resp::from_row(&row)).collect()
+                Ok(rows) => (&rows).iter().map(|row| Article::from_row(&row)).collect()
             }
         };
 
