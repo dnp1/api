@@ -1,6 +1,6 @@
 use iron::prelude::*;
 use iron::status;
-use iron::Handler;
+use iron;
 
 use std::sync::Arc;
 use r2d2::Pool;
@@ -8,12 +8,12 @@ use r2d2_postgres::PostgresConnectionManager;
 use util::{SessionManager, Session};
 use std::error::Error;
 
-pub struct SessionCreate {
+pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
     pub sm: Arc<SessionManager>,
 }
 
-impl Handler for SessionCreate {
+impl iron::Handler for Handler {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let db = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),

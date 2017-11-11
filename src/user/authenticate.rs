@@ -9,18 +9,18 @@ use r2d2_postgres::PostgresConnectionManager;
 use util::{Session, SessionHandler};
 
 #[derive(Clone, Serialize, Deserialize)]
-struct AuthenticateBody {
+struct RequestBody {
     email: String,
     password: String
 }
 
-pub struct Authenticate {
+pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
 }
 
-impl SessionHandler for Authenticate {
+impl SessionHandler for Handler {
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
-        let body = req.get::<bodyparser::Struct<AuthenticateBody>>();
+        let body = req.get::<bodyparser::Struct<RequestBody>>();
         let body = match body {
             Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
             Ok(None) => return Ok(Response::with((status::BadRequest, "empty body"))),

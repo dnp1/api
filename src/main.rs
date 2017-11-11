@@ -65,8 +65,8 @@ fn setup_postgres(conn_str: &'static str, pool_size: u32, min_idle: u32) -> Post
 
 fn main() {
     let sm = util::SessionManager::new("sadnash dsa das".to_owned().as_ref());
-    let file_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 10, 10);
-    let articles_db = setup_postgres("postgres://postgres:mysecretpassword@localhost", 10, 10);
+    let file_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/file", 10, 10);
+    let articles_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/article", 10, 10);
     let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/user", 10, 10);
     let mut router = Router::new();
     let sm = Arc::from(sm);

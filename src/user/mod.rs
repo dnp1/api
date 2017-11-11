@@ -22,19 +22,19 @@ mod authenticate;
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm: Arc<SessionManager>) {
     let db = Arc::new(db);
-    let user_avatar_update = avatar_update::UserAvatarUpdate { db: db.clone() };
-    let user_avatar_read = avatar_read::UserAvatarRead { db: db.clone() };
-    let user_email_read = email_read::UserEmailRead { db: db.clone() };
-    let user_email_update_request_create = email_update_request_create::UserEmailUpdateRequestCreate { db: db.clone() };
-    let user_email_update = email_update::UserEmailUpdate { db: db.clone() };
-    let user_password_update = password_update::UserPasswordUpdate { db: db.clone() };
-    let user_name_read = name_read::UserNameRead { db: db.clone() };
-    let user_name_update = name_update::UserNameUpdate { db: db.clone() };
-    let user_creation_request_create = creation_request_create::UserCreationRequestCreate { db: db.clone() };
-    let user_create = create::UserCreate { db: db.clone() };
-    let user_session_create = session_create::SessionCreate { db: db.clone(), sm: sm.clone() };
-    let user_password_reset = password_reset::UserPasswordReset { db: db.clone() };
-    let authenticate = authenticate::Authenticate { db: db.clone() };
+    let user_avatar_update = avatar_update::Handler { db: db.clone() };
+    let user_avatar_read = avatar_read::Handler { db: db.clone() };
+    let user_email_read = email_read::Handler { db: db.clone() };
+    let user_email_update_request_create = email_update_request_create::Handler { db: db.clone() };
+    let user_email_update = email_update::Handler { db: db.clone() };
+    let user_password_update = password_update::Handler { db: db.clone() };
+    let user_name_read = name_read::Handler { db: db.clone() };
+    let user_name_update = name_update::Handler { db: db.clone() };
+    let user_creation_request_create = creation_request_create::Handler { db: db.clone() };
+    let user_create = create::Handler { db: db.clone() };
+    let user_session_create = session_create::Handler { db: db.clone(), sm: sm.clone() };
+    let user_password_reset = password_reset::Handler { db: db.clone() };
+    let authenticate = authenticate::Handler { db: db.clone() };
 
     router.put("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_update, sm: sm.clone() }, "user_avatar_update");
     router.get("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_read, sm: sm.clone() }, "user_avatar_get");

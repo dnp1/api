@@ -10,11 +10,11 @@ struct AccessRecoveryBody {
     email: String,
 }
 
-pub struct UserPasswordReset {
+pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>
 }
 
-impl SessionHandler for UserPasswordReset {
+impl SessionHandler for Handler {
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         Ok(Response::with((status::Ok, "TODO:")))
     }

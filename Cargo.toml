@@ -17,7 +17,6 @@ postgres= { version = "*", features = ["with-uuid"] }
 r2d2="*"
 r2d2_postgres="*"
 handlebars-iron="*"
-rustc-serialize = "*"
 jsonwebtoken="3"
 serde = "1.0.19"
 serde_json= "*"

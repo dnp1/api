@@ -1,10 +1,15 @@
 use router::Router;
 use iron::{Request, Response, IronResult, status, Handler};
 use iron::headers::Authorization;
+use jwt::errors::Error;
 
 
-pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> &'s str {
+pub fn get_url_param_default<'s>(req: &'s Request, name: &'s str) -> &'s str {
     return req.extensions.get::<Router>().unwrap().find(name).unwrap_or("/");
+}
+
+pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> Option<&'s str> {
+    return req.extensions.get::<Router>().unwrap().find(name);
 }
 
 use jwt::{encode, decode, Header, Algorithm, Validation};
@@ -101,7 +106,7 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
         match self.handler.handle_session(&mut session, req) {
             Ok(mut response) => {
                 match self.sm.create_session_payload(&mut session) {
-                    Err(err) => Ok(Response::with((status::InternalServerError, "ooops"))),
+                    Err(err) => Ok(Response::with((status::InternalServerError, err.to_string()))),
                     Ok(payload) => {
                         response.headers.set(Authorization(payload));
                         Ok(response)
