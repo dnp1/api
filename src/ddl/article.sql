@@ -106,7 +106,7 @@ WHERE article.active
                                               WHERE a.external_id = before_external_id)) -- index here
 ORDER BY article.publication_datetime DESC
 LIMIT fetch_length
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL;
 
 
 CREATE OR REPLACE FUNCTION get_article_list_by_tag(tag_id_ UUID, fetch_length INT, before_external_id UUID)
@@ -133,7 +133,7 @@ WHERE article.active
                                               WHERE a.external_id = before_external_id)) -- index here
 ORDER BY article.publication_datetime DESC
 LIMIT fetch_length
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 
 CREATE OR REPLACE FUNCTION get_article(external_id_ UUID)
@@ -152,7 +152,7 @@ SELECT
 FROM article
   INNER JOIN article_edition edition ON edition.active AND edition.article_id = article.id
 WHERE article.external_id = external_id_ AND article.active
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 
 CREATE OR REPLACE FUNCTION get_article_content(article_id_ UUID)
@@ -163,7 +163,7 @@ FROM article
   INNER JOIN article_edition edition ON edition.active AND edition.article_id = article.id
 WHERE article.active AND
       article.external_id = article_id_
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 CREATE OR REPLACE FUNCTION get_article_comment_list(article_id_ UUID, before_external_id UUID, fetch_length INT)
   RETURNS TABLE(
@@ -190,7 +190,7 @@ WHERE "comment".active
                                                 WHERE a.external_id = before_external_id)) -- index here
 ORDER BY "comment".publication_datetime
 LIMIT fetch_length
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 
 CREATE OR REPLACE FUNCTION get_comment_content(comment_id_ UUID)
@@ -199,7 +199,7 @@ SELECT "edition".content
 FROM "comment"
   INNER JOIN comment_edition edition ON edition.active AND edition.comment_id = comment.id
 WHERE "comment".external_id = comment_id_ AND "comment".active
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 
 CREATE OR REPLACE FUNCTION create_comment(article_id_ UUID, user_id_ UUID, publication_datetime_ TIMESTAMP,
@@ -238,6 +238,6 @@ FROM "tag"
   INNER JOIN article_tag ON article_tag.tag_id = "tag".id
   INNER JOIN article ON article.id = article_tag.article_id
 WHERE article.external_id = article_id_;
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 

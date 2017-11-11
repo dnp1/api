@@ -175,7 +175,7 @@ SELECT
 FROM user_name
 
 WHERE active AND user_name.user_id = get_user_id(user_id_)
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 CREATE OR REPLACE FUNCTION get_user_avatar(user_id_ UUID)
   RETURNS UUID AS
@@ -184,7 +184,7 @@ SELECT
   user_avatar.file_id
 FROM user_avatar
 WHERE active AND user_avatar.user_id = get_user_id(user_id_)
-$$ LANGUAGE SQL STRICT IMMUTABLE;
+$$ LANGUAGE SQL STRICT STABLE;
 
 
 CREATE OR REPLACE FUNCTION get_user_email(user_id_ UUID)
