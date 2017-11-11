@@ -8,8 +8,8 @@ use util;
 use util::{Session, SessionHandler};
 use std::error::Error;
 use uuid::Uuid;
-use article::common::Article;
 use serde_json;
+use article::common::Content;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
@@ -26,20 +26,20 @@ impl SessionHandler for Handler {
         };
         let resp = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => match connection.query("SELECT * FROM get_article($1)",
+            Ok(connection) => match connection.query("SELECT * FROM get_article_content($1) as content",
                                                      &[]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
-                    Article::from_row(&rows.get(0))
+                    Content::from_row(&rows.get(0))
                 } else {
-                    return Ok(Response::with((status::NotFound, "article was not found")))
+                    return Ok(Response::with((status::NotFound, "article was not found")));
                 }
             }
         };
 
         match serde_json::to_string(&resp) {
-            Err(err) => Ok(Response::with((status::InternalServerError,err.description()))),
-            Ok(json) => Ok(Response::with((status::Ok,json)))
+            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
+            Ok(json) => Ok(Response::with((status::Ok, json)))
         }
     }
 }

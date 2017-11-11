@@ -193,12 +193,39 @@ LIMIT fetch_length
 $$ LANGUAGE SQL STRICT STABLE;
 
 
-CREATE OR REPLACE FUNCTION get_comment_content(comment_id_ UUID)
+CREATE OR REPLACE FUNCTION get_article_comment(article_id_ UUID, comment_id_ UUID)
+  RETURNS TABLE(
+    id                   UUID,
+    user_id              UUID,
+    publication_datetime TIMESTAMP,
+    edition_datetime     TIMESTAMP
+  ) AS $$
+SELECT
+  "comment".external_id,
+  "user".external_id,
+  "comment".publication_datetime,
+  "edition".publication_datetime
+FROM "comment"
+  INNER JOIN comment_edition edition ON edition.active AND edition.id = "comment".id
+  INNER JOIN "user" ON "user".id = "comment".user_id
+WHERE "comment".active AND "comment".external_id = comment_id_
+      AND "comment".article_id = (SELECT id
+                                  FROM article
+                                  WHERE article.external_id = article_id_)
+ORDER BY "comment".publication_datetime
+$$ LANGUAGE SQL STRICT STABLE;
+
+
+CREATE OR REPLACE FUNCTION get_article_comment_content(article_id_ UUID, comment_id_ UUID)
   RETURNS TEXT AS $$
 SELECT "edition".content
 FROM "comment"
   INNER JOIN comment_edition edition ON edition.active AND edition.comment_id = comment.id
-WHERE "comment".external_id = comment_id_ AND "comment".active
+WHERE "comment".active
+      AND  "comment".external_id = comment_id_
+      AND "comment".article_id = (SELECT id
+                                  FROM article
+                                  WHERE article.external_id = article_id_)
 $$ LANGUAGE SQL STRICT STABLE;
 
 

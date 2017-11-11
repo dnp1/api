@@ -8,19 +8,39 @@ use util;
 use util::{Session, SessionHandler};
 use std::error::Error;
 use uuid::Uuid;
-
+use serde_json;
+use article::common::Comment;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
 }
 
+const FETCH_LENGTH: i32 = 10;
+
+
 impl SessionHandler for Handler {
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
-        let ref article_id = util::get_url_param_default(req, "article_id");
-        let ref comment_id = util::get_url_param_default(req, "comment_id");
-        match self.db.get() {
-            Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => Ok(Response::with((status::Ok, *article_id)))
+        let article_id: Uuid = match util::get_url_param(req, "article_id") {
+            None => return Ok(Response::with((status::BadRequest, "no article_id"))),
+            Some(ref user_id) => match Uuid::from_bytes(user_id.as_ref()) {
+                Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
+                Ok(user_id) => user_id,
+            }
+        };
+        let after_uuid: Option<Uuid> = None; //TODO:get_query_param
+
+        let resp: Vec<Comment> = match self.db.get() {
+            Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
+            Ok(connection) => match connection.query("SELECT * FROM get_article_list($1, $2, $3)",
+                                                     &[&article_id, &FETCH_LENGTH, &after_uuid]) {
+                Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
+                Ok(rows) => (&rows).iter().map(|row| Comment::from_row(&row)).collect()
+            }
+        };
+
+        match serde_json::to_string(&resp) {
+            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
+            Ok(json) => Ok(Response::with((status::Ok, json)))
         }
     }
 }
