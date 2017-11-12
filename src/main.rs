@@ -50,7 +50,7 @@ fn http_listen(router: Router) {
         read: Some(Duration::from_secs(10)),
         write: Some(Duration::from_secs(10))
     };
-    iron.http("localhost:3000").unwrap();
+    iron.http("0.0.0.0:3000").unwrap();
 }
 
 fn setup_postgres(conn_str: &str, pool_size: u32, min_idle: u32) -> PostgresPool {

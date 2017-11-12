@@ -15,6 +15,7 @@ mod name_update;
 mod creation_request_create;
 mod create;
 mod session_create;
+mod session_read;
 mod password_reset;
 mod authenticate;
 mod common;
@@ -33,9 +34,10 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     let user_name_update = name_update::Handler { db: db.clone() };
     let user_creation_request_create = creation_request_create::Handler { db: db.clone() };
     let user_create = create::Handler { db: db.clone() };
-    let user_session_create = session_create::Handler { db: db.clone(), sm: sm.clone() };
+    let session_create = session_create::Handler { db: db.clone(), sm: sm.clone() };
     let user_password_reset = password_reset::Handler { db: db.clone() };
     let authenticate = authenticate::Handler { db: db.clone() };
+    let session_read = session_read::Handler {};
 
     router.put("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_update, sm: sm.clone() }, "user_avatar_update");
     router.get("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_read, sm: sm.clone() }, "user_avatar_get");
@@ -48,6 +50,7 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     router.post("/user/sign-up", SessionHandlerBox { handler: user_creation_request_create, sm: sm.clone() }, "user_creation_request_create");
     router.post("/user", SessionHandlerBox { handler: user_create, sm: sm.clone() }, "user_create");
     router.post("/user/password-recovery", SessionHandlerBox { handler: user_password_reset, sm: sm.clone() }, "user_password_reset");
-    router.post("/session", user_session_create, "session_create");
+    router.post("/session", session_create, "session_create");
+    router.get("/session", SessionHandlerBox { handler: session_read, sm: sm.clone() }, "session_read");
     router.post("/authenticate", SessionHandlerBox { handler: authenticate, sm: sm.clone() }, "session_authenticate");
 }
