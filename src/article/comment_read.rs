@@ -19,14 +19,14 @@ impl SessionHandler for Handler {
     fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let article_id: Uuid = match util::get_url_param(req, "article_id") {
             None => return Ok(Response::with((status::BadRequest, "no article_id"))),
-            Some(ref user_id) => match Uuid::from_bytes(user_id.as_ref()) {
+            Some(ref user_id) => match Uuid::parse_str(user_id.as_ref()) {
                 Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
                 Ok(user_id) => user_id,
             }
         };
         let comment_id: Uuid = match util::get_url_param(req, "comment_id") {
             None => return Ok(Response::with((status::BadRequest, "no comment_id"))),
-            Some(ref user_id) => match Uuid::from_bytes(user_id.as_ref()) {
+            Some(ref user_id) => match Uuid::parse_str(user_id.as_ref()) {
                 Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
                 Ok(user_id) => user_id,
             }

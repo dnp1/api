@@ -21,12 +21,12 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
 
     let article_list = list::Handler { db: db.clone() };
     let article_read = read::Handler { db: db.clone() };
+    let article_read_content = read_content::Handler { db: db.clone() };
     let article_tag_list = tag_list::Handler { db: db.clone() };
     let article_comment_list = comment_list::Handler { db: db.clone() };
     let article_comment_read = comment_read::Handler { db: db.clone() };
     let article_comment_create = comment_create::Handler { db: db.clone() };
     let article_comment_read_content = comment_read_content::Handler { db: db.clone() };
-    let article_read_content = read_content::Handler { db: db.clone() };
 
     router.get("/article", SessionHandlerBox { handler: article_list, sm: sm.clone() }, "article_list");
     router.get("/article/:article_id", SessionHandlerBox { handler: article_read, sm: sm.clone() }, "article_read");
