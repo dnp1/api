@@ -171,8 +171,8 @@ CREATE OR REPLACE FUNCTION get_user_name(user_id_ UUID)
   RETURNS TABLE(given_name TEXT, family_name TEXT) AS
 $$
 SELECT
-  user_name.family_name,
-  user_name.given_name
+  user_name.given_name,
+  user_name.family_name
 FROM user_name
 
 WHERE active AND user_name.user_id = get_user_id(user_id_)

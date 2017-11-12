@@ -1,6 +1,5 @@
 use iron::prelude::*;
 use iron::status;
-
 use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
@@ -31,8 +30,8 @@ impl SessionHandler for Handler {
 
         let resp: Vec<Comment> = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => match connection.query("SELECT * FROM get_article_list($1, $2, $3)",
-                                                     &[&article_id, &FETCH_LENGTH, &after_uuid]) {
+            Ok(connection) => match connection.query("SELECT * FROM get_article_comment_list($1, $2, $3)",
+                                                     &[&article_id, &after_uuid, &FETCH_LENGTH]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => (&rows).iter().map(|row| Comment::from_row(&row)).collect()
             }

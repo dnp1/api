@@ -23,7 +23,6 @@ impl Article {
 }
 
 
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Comment {

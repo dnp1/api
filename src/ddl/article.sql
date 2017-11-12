@@ -179,19 +179,19 @@ SELECT
   "comment".publication_datetime,
   "edition".publication_datetime
 FROM "comment"
-  INNER JOIN comment_edition edition ON edition.active AND edition.id = "comment".id
+  INNER JOIN comment_edition edition ON edition.active AND edition.comment_id = "comment".id
   INNER JOIN "user" ON "user".id = "comment".user_id
 WHERE "comment".active
-      AND "comment".article_id = (SELECT id
+      AND "comment".article_id = (SELECT article.id
                                   FROM article
                                   WHERE article.external_id = article_id_)
       AND (before_external_id IS NULL
-           OR "comment".publication_datetime < (SELECT publication_datetime
-                                                FROM "comment" a
-                                                WHERE a.external_id = before_external_id)) -- index here
+           OR "comment".publication_datetime < (SELECT com.publication_datetime
+                                                FROM "comment" com
+                                                WHERE com.external_id = before_external_id)) -- index here
 ORDER BY "comment".publication_datetime
 LIMIT fetch_length
-$$ LANGUAGE SQL STRICT STABLE;
+$$ LANGUAGE SQL STABLE;
 
 
 CREATE OR REPLACE FUNCTION get_article_comment(article_id_ UUID, comment_id_ UUID)
@@ -207,7 +207,7 @@ SELECT
   "comment".publication_datetime,
   "edition".publication_datetime
 FROM "comment"
-  INNER JOIN comment_edition edition ON edition.active AND edition.id = "comment".id
+  INNER JOIN comment_edition edition ON edition.active AND edition.comment_id = "comment".id
   INNER JOIN "user" ON "user".id = "comment".user_id
 WHERE "comment".active AND "comment".external_id = comment_id_
       AND "comment".article_id = (SELECT id
