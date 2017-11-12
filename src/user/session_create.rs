@@ -1,12 +1,14 @@
 use iron::prelude::*;
 use iron::status;
 use iron;
-
 use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util::{SessionManager, Session};
 use std::error::Error;
+use iron::headers::Authorization;
+use user::common::ExposedSession;
+use serde_json;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
@@ -28,7 +30,12 @@ impl iron::Handler for Handler {
         };
 
         if let Ok(session) = self.sm.create_session_payload(&mut Session::new(session_id)) {
-            Ok(Response::with((status::Ok, session)))
+            let mut response = match serde_json::to_string(&ExposedSession{user_id: None}) {
+                Err(err) => Response::with((status::InternalServerError, err.description())),
+                Ok(json) => Response::with((status::Ok, json)),
+            };
+            response.headers.set(Authorization(session));
+            Ok(response)
         } else {
             Ok(Response::with((status::ServiceUnavailable, "")))
         }

@@ -15,7 +15,7 @@ pub fn get_url_param<'s>(req: &'s Request, name: &'s str) -> Option<&'s str> {
 use jwt::{encode, decode, Header, Algorithm, Validation};
 use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use ::std::sync::Arc;
+use std::sync::Arc;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]

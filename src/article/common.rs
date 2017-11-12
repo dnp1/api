@@ -1,9 +1,9 @@
 use uuid::Uuid;
 use postgres::rows;
-//use serde;
 use chrono::NaiveDateTime;
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Article {
     id: Uuid,
     title: String,
@@ -25,6 +25,7 @@ impl Article {
 
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Comment {
     id: Uuid,
     user_id: Uuid,
@@ -44,6 +45,7 @@ impl Comment {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Content {
     content: String
 }

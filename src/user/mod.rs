@@ -17,6 +17,7 @@ mod create;
 mod session_create;
 mod password_reset;
 mod authenticate;
+mod common;
 
 
 
