@@ -8,9 +8,25 @@ use util;
 use util::{Session, SessionHandler};
 use std::error::Error;
 use uuid::Uuid;
+use serde_json;
+use postgres::rows;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Email {
+    address: String
+}
+
+impl Email {
+    pub fn from_row(row: &rows::Row) -> Email {
+        return Email {
+            address: row.get("address"),
+        };
+    }
 }
 
 impl SessionHandler for Handler {
@@ -22,22 +38,22 @@ impl SessionHandler for Handler {
                 Ok(user_id) => user_id,
             }
         };
-        let email: Option<String> = match self.db.get() {
+        let email = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query(
-                "SELECT get_user_email($1) as user_id",
+                "SELECT get_user_email($1) as address",
                 &[&user_id]) {
                 Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
-                    rows.get(0).get("id")
+                    Email::from_row(&rows.get(0))
                 } else {
-                    None
+                    return Ok(Response::with((status::NotFound, "email for user_id not found")))
                 }
             }
         };
-        match email {
-            None => Ok(Response::with((status::NotFound, ))),
-            Some(email) => Ok(Response::with((status::Ok, email)))
+        match serde_json::to_string(&email) {
+            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
+            Ok(email) => Ok(Response::with((status::Ok, email)))
         }
     }
 }

@@ -34,7 +34,7 @@ impl SessionHandler for Handler {
 
         let comment_content = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => match connection.query("SELECT get_article_comment($1, $2) as content",
+            Ok(connection) => match connection.query("SELECT get_article_comment_content($1, $2) as content",
                                                      &[&article_id, &comment_id]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {

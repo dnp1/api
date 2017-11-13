@@ -25,13 +25,13 @@ impl SessionHandler for Handler {
         let avatar_id: Option<Uuid> = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query(
-                "SELECT get_user_avatar($1) as user_id",
+                "SELECT get_user_avatar($1) as file_id",
                 &[&user_id]) {
                 Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
-                    rows.get(0).get("id")
+                    rows.get(0).get("file_id")
                 } else {
-                    None
+                    return Ok(Response::with((status::NotFound, "avatar not found for user_id")))
                 }
             }
         };
