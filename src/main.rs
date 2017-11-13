@@ -71,7 +71,8 @@ fn main() {
     let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/user", 10, 10);
     let mut router = Router::new();
     let sm = Arc::from(sm);
-    file::register_handlers(file_db, &mut router, sm.clone());
+    let storage = util::DiskStorage::new("/home/danilo/uploads");
+    file::register_handlers(file_db, &mut router, sm.clone(), storage);
     article::register_handlers(articles_db, &mut router, sm.clone());
     user::register_handlers(user_db, &mut router, sm.clone());
 

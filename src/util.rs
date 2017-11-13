@@ -2,6 +2,9 @@ use router::Router;
 use iron::{Request, Response, IronResult, status, Handler};
 use iron::headers::Authorization;
 use jwt::errors::Error;
+use std::io::{Read, Write, BufWriter, BufRead};
+use std::fs::File;
+use std::path::PathBuf;
 
 
 pub fn get_url_param_default<'s>(req: &'s Request, name: &'s str) -> &'s str {
@@ -17,6 +20,8 @@ use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::sync::Arc;
 use uuid::Uuid;
+use std::error;
+use std::result;
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
@@ -115,5 +120,72 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
             }
             Err(err) => Err(err),
         }
+    }
+}
+
+
+type StorageResult = result::Result<usize, StorageError>;
+
+#[derive(Debug)]
+pub struct StorageError {}
+impl error::Error for StorageError{
+    fn description(&self) -> &str {
+       "Could not save file"
+    }
+}
+
+use std::fmt;
+impl fmt::Display for StorageError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Oh no, something bad went down")
+    }
+}
+
+pub trait Storage: Send + Sync + 'static {
+    fn save<I>(&self, filename: &str, content: &mut I) -> StorageResult where I : BufRead;
+}
+
+
+pub struct DiskStorage {
+    directory: PathBuf
+}
+
+impl DiskStorage {
+    pub fn new(directory: &str) -> DiskStorage {
+        DiskStorage{directory: PathBuf::from(directory)}
+    }
+}
+
+impl Storage for DiskStorage {
+    fn save<I>(&self, filename: &str, content:&mut I) -> StorageResult   where I : BufRead {
+        let file_path = self.directory.join(filename);
+        let file = match File::create("foo.txt") {
+            Err(_) => return Err(StorageError{}),
+            Ok(file) => file,
+
+        };
+        let mut written: usize = 0;
+        let mut buffer = BufWriter::new(file);
+        loop {
+            let read = match content.fill_buf() {
+                Err(err) => return Err(StorageError{}),
+                Ok(bytes) => match buffer.write_all(bytes) {
+                    Err(err) => return Err(StorageError{}),
+                    Ok(_) => {
+                        written += bytes.len();
+                        bytes.len()
+                    },
+                },
+            };
+            if read == 0 {
+                break;
+            }
+            content.consume(read);
+        }
+        match buffer.flush() {
+            Err(_) => Err(StorageError{}),
+            Ok(_) => Ok(written),
+        }
+
     }
 }
