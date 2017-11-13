@@ -86,7 +86,7 @@ impl <T>SessionHandler for FileCreate<T> where T : Storage {
 
         match serde_json::to_string(&File{id:file_id}) {
             Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
-            Ok(email) => Ok(Response::with((status::Ok, email)))
+            Ok(file) => Ok(Response::with((status::Ok, file)))
         }
     }
 }
