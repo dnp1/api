@@ -44,7 +44,7 @@ impl SessionHandler for Handler {
                 }
             },
         };
-        if let Some(id) = user_id {
+        if let Some(_) = user_id {
             session.user_id = user_id;
             match serde_json::to_string(&ExposedSession{user_id}) {
                 Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),

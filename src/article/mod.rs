@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::error::Error;
 
 use router::Router;
 use r2d2::Pool;
@@ -15,6 +14,7 @@ mod tag_list;
 mod common;
 mod read_content;
 mod comment_read_content;
+
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut Router, sm: Arc<SessionManager>) {
     let db = Arc::new(db);

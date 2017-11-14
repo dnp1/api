@@ -7,7 +7,6 @@ use r2d2_postgres::PostgresConnectionManager;
 use util;
 use util::{Session, SessionHandler};
 use std::error::Error;
-use uuid::Uuid;
 
 
 pub struct Handler {

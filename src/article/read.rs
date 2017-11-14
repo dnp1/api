@@ -10,7 +10,6 @@ use std::error::Error;
 use uuid::Uuid;
 use article::common::Article;
 use serde_json;
-use std::fmt;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
