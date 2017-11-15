@@ -268,5 +268,3 @@ FROM "tag"
   INNER JOIN article ON article.id = article_tag.article_id
 WHERE article.external_id = article_id_;
 $$ LANGUAGE SQL STRICT STABLE;
-
-

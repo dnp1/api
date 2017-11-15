@@ -19,7 +19,7 @@ CREATE TABLE file (
   external_id       UUID UNIQUE DEFAULT gen_random_uuid() NOT NULL,
   active            BOOL DEFAULT TRUE                     NOT NULL,
   filename          VARCHAR(255)                          NOT NULL,
-  "size"              BIGINT                                NOT NULL,
+  "size"            BIGINT                                NOT NULL,
   file_type_id      INT REFERENCES file_type (id)         NOT NULL,
   creation_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT localtimestamp,
   creator_id        INT REFERENCES "user" (id)
@@ -62,3 +62,18 @@ INSERT INTO "file" (filename, "size", file_type_id, creator_id)
 VALUES (filename_, size_, get_file_type_id(mime), get_user_id(external_id_))
 RETURNING "file".external_id;
 $$ LANGUAGE SQL STRICT;
+
+CREATE OR REPLACE FUNCTION get_file(external_id_ UUID)
+  RETURNS TABLE(
+    "size" BIGINT,
+    filename VARCHAR(255),
+    mime VARCHAR(255)
+  ) AS
+$$
+SELECT
+  "file".size,
+  "file".filename,
+  "file_type".mime
+FROM "file" INNER JOIN "file_type" ON "file".file_type_id = file_type.id
+WHERE file.active AND file.external_id = external_id_
+$$ LANGUAGE SQL STRICT STABLE;
