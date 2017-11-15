@@ -8,9 +8,16 @@ use util;
 use util::{Session, SessionHandler};
 use std::error::Error;
 use uuid::Uuid;
+use serde_json;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Avatar {
+    avatar_id: Uuid
 }
 
 impl SessionHandler for Handler {
@@ -22,22 +29,22 @@ impl SessionHandler for Handler {
                 Ok(user_id) => user_id,
             }
         };
-        let avatar_id: Option<Uuid> = match self.db.get() {
+        let avatar_id: Uuid = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query(
-                "SELECT get_user_avatar($1) as file_id",
+                "SELECT get_user_avatar($1) as avatar_id",
                 &[&user_id]) {
                 Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
-                    rows.get(0).get("file_id")
+                    rows.get(0).get("avatar_id")
                 } else {
                     return Ok(Response::with((status::NotFound, "avatar not found for user_id")))
                 }
             }
         };
-        match avatar_id {
-            None => Ok(Response::with((status::NotFound, ))),
-            Some(avatar_id) => Ok(Response::with((status::Ok, avatar_id.simple().to_string())))
+        match serde_json::to_string(&Avatar{avatar_id}) {
+            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
+            Ok(avatar) => Ok(Response::with((status::Ok, avatar))),
         }
     }
 }
