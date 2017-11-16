@@ -27,25 +27,22 @@ impl SessionHandler for Handler {
             }
         };
 
-        let ok: bool = match self.db.get() {
+        let ok: Option<bool> = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(conn) => match conn.query("SELECT deactivate_file($1, $2) as deleted",
+            Ok(conn) => match conn.query("SELECT deactivate_file($1, $2)",
                                          &[&file_id, &session.user_id]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
-                    rows.get(0).get("deleted")
+                    rows.get(0).get(0)
                 } else {
                     return Ok(Response::with((status::NotFound, "file was not found")))
                 }
             }
         };
-
-        if ok {
-            Ok(Response::with((status::Forbidden, "You don't have authorization for delete this file")))
-        } else {
-            Ok(Response::with((status::Ok, "")))
+        match ok {
+            None => Ok(Response::with((status::NotFound, "file was not found"))),
+            Some(false) =>  Ok(Response::with((status::Forbidden, "You don't have authorization for delete this file"))),
+            Some(true) =>  Ok(Response::with((status::Ok, "")))
         }
-
-
     }
 }

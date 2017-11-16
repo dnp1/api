@@ -8,16 +8,24 @@ use r2d2_postgres::PostgresConnectionManager;
 use util;
 use util::{Session, SessionHandler};
 use uuid::Uuid;
+use bodyparser;
+use serde_json;
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RequestBody {
-    email: String,
+    file_id: Uuid,
     password: String
 }
 
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct Resp {
+    success: bool
 }
 
 impl SessionHandler for Handler {
@@ -31,21 +39,43 @@ impl SessionHandler for Handler {
             }
         };
 
-        let _ = match self.db.get() {
+        let body = match req.get::<bodyparser::Struct<RequestBody>>() {
+            Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
+            Ok(None) => return Ok(Response::with((status::BadRequest, "empty body"))),
+            Ok(Some(struct_body)) => struct_body,
+        };
+
+        if session.user_id != Some(user_id) {
+            return Ok(Response::with((status::Forbidden, "you can only update only your self")))
+        }
+
+
+        let password_match : bool = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => {
                 match connection.query(
-                    "SELECT TODO:($1) as user_id",
-                    &[&user_id]) {
+                    "SELECT set_user_avatar($1, $2, $3) as password_match",
+                    &[&user_id, &body.file_id, &body.password]) {
                     Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                     Ok(rows) => if rows.len() > 0 {
-                        rows.get(0).get("id")
+                        rows.get(0).get("password_match")
                     } else {
-                        1
+                        return Ok(Response::with((status::NotFound, "user not found")))
                     }
                 }
             }
         };
-        Ok(Response::with((status::NotImplemented, "")))
+
+        let status_code = if password_match {
+            status::Ok
+        } else {
+            status::Unauthorized
+        };
+        let resp = match serde_json::to_string(&Resp{success: password_match}) {
+            Err(err) =>  return Ok(Response::with((status::InternalServerError, err.description()))),
+            Ok(json) => json,
+        };
+
+        Ok(Response::with((status_code, resp)))
     }
 }
