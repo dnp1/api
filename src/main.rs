@@ -21,6 +21,7 @@ extern crate iron;
 extern crate router;
 extern crate params;
 extern crate bodyparser;
+extern crate hyper;
 
 use iron::prelude::*;
 use iron::Timeouts;
@@ -72,7 +73,7 @@ fn main() {
     let mut router = Router::new();
     let sm = Arc::from(sm);
     let storage = util::DiskStorage::new("/home/danilo/uploads");
-    file::register_handlers(file_db, &mut router, sm.clone(), storage);
+    file::register_handlers(file_db, &mut router, sm.clone(), Arc::from(storage));
     article::register_handlers(articles_db, &mut router, sm.clone());
     user::register_handlers(user_db, &mut router, sm.clone());
 

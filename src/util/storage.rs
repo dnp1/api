@@ -3,13 +3,15 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::error;
 use std::result;
+use std::io::BufReader;
 
 pub trait Storage: Send + Sync + 'static {
-    fn save<I>(&self, filename: &str, content: &mut I) -> StorageResult where I : BufRead;
+    fn save<I>(&self, filename: &str, content: &mut I) -> StorageResult<usize> where I : BufRead + Send;
+    fn retrieve (&self, filename: &str) -> StorageResult<Box<BufRead + Send>>;
 }
 
 
-type StorageResult = result::Result<usize, StorageError>;
+type StorageResult<T> = result::Result<T, StorageError>;
 
 #[derive(Debug)]
 pub struct StorageError {}
@@ -37,7 +39,7 @@ impl DiskStorage {
 }
 
 impl Storage for DiskStorage {
-    fn save<I>(&self, filename: &str, content:&mut I) -> StorageResult   where I : BufRead {
+    fn save<I>(&self, filename: &str, content:&mut I) -> StorageResult<usize>   where I : BufRead + Send {
         let file_path = self.directory.join(filename);
         let file = match File::create(file_path) {
             Err(_) => return Err(StorageError{}),
@@ -67,5 +69,14 @@ impl Storage for DiskStorage {
             Ok(_) => Ok(written),
         }
 
+    }
+    fn retrieve(&self, filename: &str) -> StorageResult<Box<BufRead + Send>> {
+        let file_path = self.directory.join(filename);
+        let file = match File::open(file_path) {
+            Err(_) => return Err(StorageError{}),
+            Ok(file) => file,
+
+        };
+        Ok(Box::new(BufReader::with_capacity(32768, file)))
     }
 }

@@ -24,7 +24,7 @@ struct File {
 
 pub struct Handler<T : Storage> {
     pub db: Arc<Pool<PostgresConnectionManager>>,
-    pub storage: T
+    pub storage: Arc<T>,
 }
 
 impl <T>SessionHandler for Handler<T> where T : Storage {
