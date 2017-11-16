@@ -1,5 +1,5 @@
 \c "file"
-ALTER DATABASE article SET timezone TO 'UTC';
+ALTER DATABASE article SET TIMEZONE TO 'UTC';
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE "user" (
@@ -65,15 +65,38 @@ $$ LANGUAGE SQL STRICT;
 
 CREATE OR REPLACE FUNCTION get_file(external_id_ UUID)
   RETURNS TABLE(
-    "size" BIGINT,
+    "size"   BIGINT,
     filename VARCHAR(255),
-    mime VARCHAR(255)
+    mime     VARCHAR(255)
   ) AS
 $$
 SELECT
   "file".size,
   "file".filename,
   "file_type".mime
-FROM "file" INNER JOIN "file_type" ON "file".file_type_id = file_type.id
-WHERE file.active AND file.external_id = external_id_
+FROM "file"
+  INNER JOIN "file_type" ON "file".file_type_id = file_type.id
+WHERE "file".active AND file.external_id = external_id_
 $$ LANGUAGE SQL STRICT STABLE;
+
+CREATE OR REPLACE FUNCTION deactivate_file(external_id_ UUID, creator_ UUID)
+  RETURNS BOOL AS
+$$
+WITH file_of_user AS (
+    SELECT "file".id AS file_id
+    FROM "file"
+    WHERE "file"."external_id" = external_id_
+          AND "file".creator_id = get_user_id(creator_)
+)
+UPDATE "file"
+SET active = CASE
+             WHEN (SELECT count(*)
+                   FROM file_of_user) > 0
+               THEN
+                 FALSE
+             ELSE active
+             END
+WHERE "file".active AND "file".external_id = external_id_
+RETURNING (SELECT count(*)
+                   FROM file_of_user) > 0;
+$$ LANGUAGE SQL STRICT VOLATILE;
