@@ -9,11 +9,14 @@ use std::error::Error;
 use iron::headers::Authorization;
 use user::common::ExposedSession;
 use serde_json;
+use iron::headers::{SetCookie};
+use util::TOKEN_NAME;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
     pub sm: Arc<SessionManager>,
 }
+
 
 impl iron::Handler for Handler {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
@@ -34,7 +37,14 @@ impl iron::Handler for Handler {
                 Err(err) => Response::with((status::InternalServerError, err.description())),
                 Ok(json) => Response::with((status::Ok, json)),
             };
-            response.headers.set(Authorization(session));
+            response.headers.set(
+                SetCookie(vec![
+                    String::from(format!("{}={};Domain={}", TOKEN_NAME, session, "127.0.0.1"))
+                ])
+
+            );
+
+
             Ok(response)
         } else {
             Ok(Response::with((status::ServiceUnavailable, "")))

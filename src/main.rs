@@ -21,7 +21,6 @@ extern crate iron;
 extern crate router;
 extern crate params;
 extern crate bodyparser;
-extern crate hyper;
 
 use iron::prelude::*;
 use iron::Timeouts;

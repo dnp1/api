@@ -4,6 +4,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 use iron::{Request};
 use iron::headers::Authorization;
+use iron::headers::{Cookie, SetCookie};
+
+
+pub const TOKEN_NAME : &'static str = "Authorization";
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
@@ -53,10 +57,22 @@ impl SessionManager {
     }
 
     pub fn get_request_session(&self, req: &Request) -> Option<Session> {
-        let authorization: Option<&Authorization<String>> = req.headers.get();
-        match authorization {
+        if let Some(&Cookie(ref cookie)) = req.headers.get() {
+            for c in cookie.iter() {
+                let prefix = format!("{}=", TOKEN_NAME);
+                if c.starts_with(&prefix) {
+                    if let Some(value) =  c.get(prefix.len()..) {
+                        return self.decode_session_payload(value);
+                    }
+                }
+
+            }
+        }
+
+        match req.headers.get::<Authorization<String>>() {
             None => None,
             Some(value) => self.decode_session_payload(value),
         }
+
     }
 }

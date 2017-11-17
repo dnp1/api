@@ -14,7 +14,7 @@ use util;
 use iron::response::BodyReader;
 use iron::headers::ContentDisposition;
 use iron::headers::ContentLength;
-use hyper::header::{Headers, DispositionType, DispositionParam, Charset};
+use iron::headers::{Headers, DispositionType, DispositionParam, Charset};
 
 
 struct File {
