@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
 [dependencies]
-hyper="*"
+hyper="^0.10"
 iron="^0.5"
 router="^0.5"
 params="*"
