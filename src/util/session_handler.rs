@@ -3,7 +3,7 @@ use iron::{Request, Response, IronResult, status, Handler};
 use util::{SessionManager, Session};
 use iron::headers::{SetCookie};
 use util::TOKEN_NAME;
-use util::set_response_auth_readers;
+use util::{set_cookie, set_cors};
 
 
 pub trait SessionHandler {
@@ -22,14 +22,16 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let mut session = match self.sm.get_request_session(req) {
             None => {
-                let result = Response::with((status::Unauthorized, "You must create a session"));
-                return Ok(result);
+                let mut response = Response::with((status::Unauthorized, "You must create a session"));
+                set_cors(&mut response);
+                return Ok(response);
             }
             Some(session) => {
                 if self.handler.authenticated() {
                     if let None = session.user_id {
-                        let result = Response::with((status::Unauthorized, "You must authenticate with an user"));
-                        return Ok(result);
+                        let mut response = Response::with((status::Unauthorized, "You must authenticate with an user"));
+                        set_cors(&mut response);
+                        return Ok(response);
                     }
                 }
                 session
@@ -40,7 +42,8 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
                 match self.sm.create_session_payload(&mut session) {
                     Err(err) => Ok(Response::with((status::InternalServerError, err.to_string()))),
                     Ok(payload) => {
-                        set_response_auth_readers(&mut response, &payload);
+                        set_cookie(&mut response, &payload);
+                        set_cors(&mut response);
                         Ok(response)
                     }
                 }

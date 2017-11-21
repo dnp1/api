@@ -29,12 +29,15 @@ pub struct SessionManager {
 
 const EXPIRATION_TIME: u64 = 3 * 24 * 60 * 60;
 
-pub fn set_response_auth_readers(response: &mut Response, session_payload: &str) {
+pub fn set_cookie(response: &mut Response, session_payload: &str) {
     response.headers.set(
         SetCookie(vec![
-            String::from(format!("{}={}", TOKEN_NAME, session_payload))
+            String::from(format!("{}={};Max-Age={}", TOKEN_NAME, session_payload, 3600))
         ])
     );
+}
+
+pub fn set_cors(response: &mut Response) {
     response.headers.set(AccessControlAllowCredentials);
     response.headers.set(AccessControlAllowOrigin::Value("http://localhost:8080".to_owned()));
 }
