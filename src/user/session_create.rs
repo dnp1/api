@@ -6,11 +6,11 @@ use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util::{SessionManager, Session};
 use std::error::Error;
-use iron::headers::Authorization;
 use user::common::ExposedSession;
 use serde_json;
 use iron::headers::{SetCookie};
 use util::TOKEN_NAME;
+use util::set_response_auth_readers;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
@@ -37,14 +37,7 @@ impl iron::Handler for Handler {
                 Err(err) => Response::with((status::InternalServerError, err.description())),
                 Ok(json) => Response::with((status::Ok, json)),
             };
-            response.headers.set(
-                SetCookie(vec![
-                    String::from(format!("{}={};Domain={}", TOKEN_NAME, session, "127.0.0.1"))
-                ])
-
-            );
-
-
+            set_response_auth_readers(&mut response, &session);
             Ok(response)
         } else {
             Ok(Response::with((status::ServiceUnavailable, "")))

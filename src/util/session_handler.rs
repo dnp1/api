@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use iron::{Request, Response, IronResult, status, Handler};
-use iron::headers::Authorization;
 use util::{SessionManager, Session};
-use iron::headers::{Cookie};
+use iron::headers::{SetCookie};
 use util::TOKEN_NAME;
+use util::set_response_auth_readers;
 
 
 pub trait SessionHandler {
@@ -40,11 +40,7 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
                 match self.sm.create_session_payload(&mut session) {
                     Err(err) => Ok(Response::with((status::InternalServerError, err.to_string()))),
                     Ok(payload) => {
-                        response.headers.set(
-                            Cookie(vec![
-                                String::from(format!("{}={};Domain={}", TOKEN_NAME, payload, "127.0.0.1"))
-                            ])
-                        );
+                        set_response_auth_readers(&mut response, &payload);
                         Ok(response)
                     }
                 }

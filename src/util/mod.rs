@@ -11,6 +11,7 @@ pub use self::session_handler::SessionHandlerBox;
 pub use self::session::SessionManager;
 pub use self::session::Session;
 pub use self::session::TOKEN_NAME;
+pub use self::session::set_response_auth_readers;
 
 pub fn get_url_param_default<'s>(req: &'s Request, name: &'s str) -> &'s str {
     return req.extensions.get::<Router>().unwrap().find(name).unwrap_or("/");
