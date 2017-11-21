@@ -203,7 +203,7 @@ CREATE OR REPLACE FUNCTION create_session()
   RETURNS BIGINT AS
 $$
 INSERT INTO "session" DEFAULT VALUES RETURNING id;
-$$ LANGUAGE SQL STABLE;
+$$ LANGUAGE SQL VOLATILE;
 
 
 CREATE OR REPLACE FUNCTION "get_user_when_password_match"(user_external_id_ UUID, password_ TEXT)

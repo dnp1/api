@@ -2,9 +2,8 @@ use jwt::{encode, decode, Header, Algorithm, Validation};
 use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
-use iron::{Request};
-use iron::headers::Authorization;
-use iron::headers::{Cookie, SetCookie};
+use iron::{Request, Response};
+use iron::headers::{Cookie, SetCookie, AccessControlAllowCredentials, AccessControlAllowOrigin};
 
 
 pub const TOKEN_NAME : &'static str = "Authorization";
@@ -29,6 +28,16 @@ pub struct SessionManager {
 
 
 const EXPIRATION_TIME: u64 = 3 * 24 * 60 * 60;
+
+pub fn set_response_auth_readers(response: &mut Response, session_payload: &str) {
+    response.headers.set(
+        SetCookie(vec![
+            String::from(format!("{}={}", TOKEN_NAME, session_payload))
+        ])
+    );
+    response.headers.set(AccessControlAllowCredentials);
+    response.headers.set(AccessControlAllowOrigin::Value("http://localhost:8080".to_owned()));
+}
 
 impl SessionManager {
     pub fn new(secret: &str) -> SessionManager {
@@ -68,11 +77,6 @@ impl SessionManager {
 
             }
         }
-
-        match req.headers.get::<Authorization<String>>() {
-            None => None,
-            Some(value) => self.decode_session_payload(value),
-        }
-
+        None
     }
 }
