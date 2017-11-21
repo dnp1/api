@@ -32,7 +32,7 @@ const EXPIRATION_TIME: u64 = 3 * 24 * 60 * 60;
 pub fn set_cookie(response: &mut Response, session_payload: &str) {
     response.headers.set(
         SetCookie(vec![
-            String::from(format!("{}={};Max-Age={}", TOKEN_NAME, session_payload, 3600))
+            String::from(format!("{}={};Max-Age={};Path=/", TOKEN_NAME, session_payload, 3600))
         ])
     );
 }
