@@ -37,10 +37,6 @@ pub fn set_cookie(response: &mut Response, session_payload: &str) {
     );
 }
 
-pub fn set_cors(response: &mut Response) {
-    response.headers.set(AccessControlAllowCredentials);
-    response.headers.set(AccessControlAllowOrigin::Value("http://localhost:8080".to_owned()));
-}
 
 impl SessionManager {
     pub fn new(secret: &str) -> SessionManager {

@@ -9,6 +9,8 @@ extern crate chrono;
 //STD
 use std::time::Duration;
 use std::sync::Arc;
+use std::collections::HashSet;
+
 
 //JWT
 extern crate jsonwebtoken as jwt;
@@ -21,10 +23,15 @@ extern crate iron;
 extern crate router;
 extern crate params;
 extern crate bodyparser;
+extern crate iron_cors;
+
 
 use iron::prelude::*;
 use iron::Timeouts;
+use iron::Chain;
+use iron::Handler;
 use router::Router;
+use iron_cors::CorsMiddleware;
 
 //Database
 extern crate r2d2;
@@ -42,8 +49,8 @@ mod util;
 pub type PostgresPool = Pool<PostgresConnectionManager>;
 
 
-fn http_listen(router: Router) {
-    let mut iron = Iron::new(router);
+fn http_listen<T> (h: T) where T: Handler {
+    let mut iron = Iron::new(h);
     iron.threads = 8;
     iron.timeouts = Timeouts {
         keep_alive: Some(Duration::from_secs(10)),
@@ -75,7 +82,13 @@ fn main() {
     file::register_handlers(file_db, &mut router, sm.clone(), Arc::from(storage));
     article::register_handlers(articles_db, &mut router, sm.clone());
     user::register_handlers(user_db, &mut router, sm.clone());
+    let allowed_hosts = ["http://localhost:8080"].iter().map(ToString::to_string).collect::<HashSet<_>>();
+    let mut cors_middleware = CorsMiddleware::with_whitelist(allowed_hosts);
+    cors_middleware.allow_credentials();
 
-    http_listen(router);
+    let mut chain = Chain::new(router);
+    chain.link_around(cors_middleware);
+
+    http_listen(chain);
 }
 

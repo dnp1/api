@@ -6,12 +6,8 @@ authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 [dependencies]
 iron="^0.5"
 router="^0.5"
-params="*"
-bodyparser="*"
-persistent="*"
-mount="*"
-staticfile="*"
-
+params="^0.7.1"
+bodyparser="^0.7"
 
 postgres= { version = "*", features = ["with-uuid", "with-chrono"] }
 r2d2="*"
@@ -23,3 +19,6 @@ serde_json= "*"
 serde_derive="*"
 uuid = { version = " ^0.5", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+
+[dependencies.iron-cors]
+git = "https://github.com/dnp1/iron-cors-rs"

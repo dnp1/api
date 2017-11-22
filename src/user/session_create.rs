@@ -10,7 +10,7 @@ use user::common::ExposedSession;
 use serde_json;
 use iron::headers::{SetCookie};
 use util::TOKEN_NAME;
-use util::{set_cookie, set_cors};
+use util::{set_cookie};
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
@@ -38,7 +38,6 @@ impl iron::Handler for Handler {
                 Ok(json) => Response::with((status::Ok, json)),
             };
             set_cookie(&mut response, &session);
-            set_cors(&mut response);
             Ok(response)
         } else {
             Ok(Response::with((status::ServiceUnavailable, "")))
