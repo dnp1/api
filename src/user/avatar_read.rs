@@ -17,7 +17,7 @@ pub struct Handler {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Avatar {
-    avatar_id: Uuid
+    file_id: Uuid
 }
 
 impl SessionHandler for Handler {
@@ -42,7 +42,7 @@ impl SessionHandler for Handler {
                 }
             }
         };
-        match serde_json::to_string(&Avatar{avatar_id}) {
+        match serde_json::to_string(&Avatar{file_id :avatar_id}) {
             Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
             Ok(avatar) => Ok(Response::with((status::Ok, avatar))),
         }
