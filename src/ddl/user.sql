@@ -230,3 +230,18 @@ INSERT INTO user_avatar (user_id, file_id)
     file_id_
 RETURNING id IS DISTINCT FROM NULL;
 $$ LANGUAGE SQL STRICT VOLATILE;
+
+CREATE OR REPLACE FUNCTION set_user_name(user_external_id_ UUID, given_name_ TEXT, family_name_ TEXT,  "password_" TEXT)
+  RETURNS BOOLEAN AS
+$$
+UPDATE user_name
+SET active = FALSE
+WHERE active AND user_id = get_user_when_password_match(user_external_id_, password_);
+
+INSERT INTO user_name (user_id, given_name, family_name)
+  SELECT
+    get_user_when_password_match(user_external_id_, password_),
+    given_name_,
+    family_name_
+RETURNING id IS DISTINCT FROM NULL;
+$$ LANGUAGE SQL STRICT VOLATILE;
