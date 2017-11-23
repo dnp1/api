@@ -31,7 +31,7 @@ use iron::Timeouts;
 use iron::Chain;
 use iron::Handler;
 use router::Router;
-use iron_cors::CorsMiddleware;
+use iron_cors::CorsMiddlewareBuilder;
 
 //Database
 extern crate r2d2;
@@ -49,7 +49,7 @@ mod util;
 pub type PostgresPool = Pool<PostgresConnectionManager>;
 
 
-fn http_listen<T> (h: T) where T: Handler {
+fn http_listen<T>(h: T) where T: Handler {
     let mut iron = Iron::new(h);
     iron.threads = 8;
     iron.timeouts = Timeouts {
@@ -83,8 +83,10 @@ fn main() {
     article::register_handlers(articles_db, &mut router, sm.clone());
     user::register_handlers(user_db, &mut router, sm.clone());
     let allowed_hosts = ["http://localhost:8080"].iter().map(ToString::to_string).collect::<HashSet<_>>();
-    let mut cors_middleware = CorsMiddleware::with_whitelist(allowed_hosts);
-    cors_middleware.allow_credentials();
+    let cors_middleware = CorsMiddlewareBuilder::new()
+        .allowed_hosts(allowed_hosts)
+        .allow_credentials(true)
+        .build();
 
     let mut chain = Chain::new(router);
     chain.link_around(cors_middleware);

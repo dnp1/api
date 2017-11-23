@@ -21,15 +21,11 @@ pub struct SessionHandlerBox<T> {
 impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync + 'static {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let mut session = match self.sm.get_request_session(req) {
-            None => {
-                let mut response = Response::with((status::Unauthorized, "You must create a session"));
-                return Ok(response);
-            }
+            None => return Ok(Response::with((status::Unauthorized, "You must create a session"))),
             Some(session) => {
                 if self.handler.authenticated() {
                     if let None = session.user_id {
-                        let mut response = Response::with((status::Unauthorized, "You must authenticate with an user"));
-                        return Ok(response);
+                        return Ok(Response::with((status::Unauthorized, "You must authenticate with an user")));
                     }
                 }
                 session
