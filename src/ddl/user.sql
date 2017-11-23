@@ -245,3 +245,18 @@ INSERT INTO user_name (user_id, given_name, family_name)
     family_name_
 RETURNING id IS DISTINCT FROM NULL;
 $$ LANGUAGE SQL STRICT VOLATILE;
+
+CREATE OR REPLACE FUNCTION set_user_password(user_external_id_ UUID, new_password_ TEXT, "password_" TEXT)
+  RETURNS BOOLEAN AS
+$$
+UPDATE user_password
+SET active = FALSE
+WHERE active AND user_id = get_user_when_password_match(user_external_id_, password_);
+
+INSERT INTO user_password ("user_id", "password")
+  SELECT
+    get_user_id(user_external_id_),
+    crypt(new_password_, gen_salt('bf', 12))
+  WHERE (SELECT count(*) FROM user_password WHERE active AND user_id = get_user_id(user_external_id_)) = 0
+RETURNING id IS DISTINCT FROM NULL;
+$$ LANGUAGE SQL STRICT VOLATILE;
