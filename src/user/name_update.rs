@@ -54,7 +54,7 @@ impl SessionHandler for Handler {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => {
                 match connection.query(
-                    "SELECT set_user_name($1, $2, $3) as password_match",
+                    "SELECT set_user_name($1, $2, $3, $4) as password_match",
                     &[&user_id, &body.given_name, &body.family_name, &body.password]) {
                     Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                     Ok(rows) => if rows.len() > 0 {
