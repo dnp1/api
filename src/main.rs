@@ -53,9 +53,9 @@ fn http_listen<T>(h: T) where T: Handler {
     let mut iron = Iron::new(h);
     iron.threads = 8;
     iron.timeouts = Timeouts {
-        keep_alive: Some(Duration::from_secs(10)),
-        read: Some(Duration::from_secs(10)),
-        write: Some(Duration::from_secs(10))
+        keep_alive: Some(Duration::from_secs(1)),
+        read: Some(Duration::from_secs(5)),
+        write: Some(Duration::from_secs(5))
     };
     iron.http("0.0.0.0:3000").unwrap();
 }
@@ -73,9 +73,9 @@ fn setup_postgres(conn_str: &str, pool_size: u32, min_idle: u32) -> PostgresPool
 
 fn main() {
     let sm = util::SessionManager::new("sadnash dsa das");
-    let file_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/file", 10, 10);
-    let articles_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/article", 10, 10);
-    let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/user", 10, 10);
+    let file_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/file", 30, 10);
+    let articles_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/article", 30, 10);
+    let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/user", 30, 10);
     let mut router = Router::new();
     let sm = Arc::from(sm);
     let storage = util::DiskStorage::new("/home/danilo/uploads");
