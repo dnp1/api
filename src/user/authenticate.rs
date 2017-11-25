@@ -6,8 +6,7 @@ use std::error::Error;
 use uuid::Uuid;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SessionHandler};
-use serde_json;
+use util::{Session, SessionHandler, Json};
 use user::common::ExposedSession;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -46,11 +45,7 @@ impl SessionHandler for Handler {
         };
         if let Some(_) = user_id {
             session.user_id = user_id;
-            match serde_json::to_string(&ExposedSession{user_id}) {
-                Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
-                Ok(json) => Ok(Response::with((status::Ok, json))),
-            }
-
+            Ok(Response::with((status::Ok, Json(ExposedSession{user_id}))))
         } else {
             Ok(Response::with((status::Unauthorized, "")))
         }

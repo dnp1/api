@@ -10,11 +10,10 @@ use iron::status;
 use params::Params;
 use params::Value;
 use util::{Session, SessionHandler, Storage};
-use serde_json;
 use uuid::Uuid;
 use std::error::Error;
 use std::io::BufReader;
-
+use util::Json;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -75,9 +74,6 @@ impl <T>SessionHandler for Handler<T> where T : Storage {
             return Ok(Response::with((status::InternalServerError, e.description())))
         };
 
-        match serde_json::to_string(&File{id:file_id}) {
-            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
-            Ok(file) => Ok(Response::with((status::Ok, file)))
-        }
+        Ok(Response::with((status::Ok, Json(&File{id:file_id}))))
     }
 }

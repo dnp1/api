@@ -5,10 +5,9 @@ use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util;
-use util::{Session, SessionHandler};
+use util::{Session, SessionHandler, Json};
 use std::error::Error;
 use uuid::Uuid;
-use serde_json;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>
@@ -42,9 +41,6 @@ impl SessionHandler for Handler {
                 }
             }
         };
-        match serde_json::to_string(&Avatar{file_id :avatar_id}) {
-            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
-            Ok(avatar) => Ok(Response::with((status::Ok, avatar))),
-        }
+        Ok(Response::with((status::Ok, Json(Avatar{file_id :avatar_id}))))
     }
 }

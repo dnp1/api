@@ -7,9 +7,8 @@ use r2d2_postgres::PostgresConnectionManager;
 use util::{Session, SessionHandler};
 use std::error::Error;
 use uuid::Uuid;
-use serde_json;
 use article::common::Article;
-
+use util::Json;
 
 
 pub struct Handler {
@@ -30,10 +29,6 @@ impl SessionHandler for Handler {
                 Ok(rows) => (&rows).iter().map(|row| Article::from_row(&row)).collect()
             }
         };
-
-        match serde_json::to_string(&resp) {
-            Err(err) => Ok(Response::with((status::InternalServerError,err.description()))),
-            Ok(json) => Ok(Response::with((status::Ok,json)))
-        }
+        Ok(Response::with((status::Ok,Json(resp))))
     }
 }

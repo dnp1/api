@@ -5,12 +5,10 @@ use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util;
-use util::{Session, SessionHandler};
+use util::{Session, SessionHandler, Json};
 use std::error::Error;
 use uuid::Uuid;
-use serde_json;
 use postgres::rows;
-use util::Json;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>

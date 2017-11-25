@@ -6,10 +6,9 @@ use std::error::Error;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util;
-use util::{Session, SessionHandler};
+use util::{Session, SessionHandler, Json};
 use uuid::Uuid;
 use bodyparser;
-use serde_json;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -65,17 +64,11 @@ impl SessionHandler for Handler {
                 }
             }
         };
-
         let status_code = if password_match {
             status::Ok
         } else {
             status::Unauthorized
         };
-        let resp = match serde_json::to_string(&Resp{success: password_match}) {
-            Err(err) =>  return Ok(Response::with((status::InternalServerError, err.description()))),
-            Ok(json) => json,
-        };
-
-        Ok(Response::with((status_code, resp)))
+        Ok(Response::with((status_code, Json(Resp{success: password_match}))))
     }
 }

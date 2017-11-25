@@ -7,8 +7,8 @@ use util;
 use util::{Session, SessionHandler};
 use std::error::Error;
 use uuid::Uuid;
-use serde_json;
 use article::common::Comment;
+use util::Json;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
@@ -36,10 +36,6 @@ impl SessionHandler for Handler {
                 Ok(rows) => (&rows).iter().map(|row| Comment::from_row(&row)).collect()
             }
         };
-
-        match serde_json::to_string(&resp) {
-            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
-            Ok(json) => Ok(Response::with((status::Ok, json)))
-        }
+        Ok(Response::with((status::Ok, Json(resp))))
     }
 }
