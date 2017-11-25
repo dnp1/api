@@ -25,6 +25,7 @@ extern crate bodyparser;
 extern crate iron_cors;
 extern crate modifier;
 extern crate hyper;
+extern crate iron_json_response_modifier;
 
 
 use iron::prelude::*;
