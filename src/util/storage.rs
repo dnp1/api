@@ -44,7 +44,6 @@ impl Storage for DiskStorage {
         let file = match File::create(file_path) {
             Err(_) => return Err(StorageError{}),
             Ok(file) => file,
-
         };
         let mut written: usize = 0;
         let mut buffer = BufWriter::new(file);

@@ -17,7 +17,6 @@ r2d2_postgres="*"
 handlebars-iron="*"
 jsonwebtoken="3"
 serde = "1.0.19"
-serde_json= "*"
 serde_derive="*"
 uuid = { version = " ^0.5", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
