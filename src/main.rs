@@ -11,7 +11,6 @@ use std::time::Duration;
 use std::sync::Arc;
 use std::collections::HashSet;
 
-
 //JWT
 extern crate jsonwebtoken as jwt;
 
@@ -24,6 +23,8 @@ extern crate router;
 extern crate params;
 extern crate bodyparser;
 extern crate iron_cors;
+extern crate modifier;
+extern crate hyper;
 
 
 use iron::prelude::*;

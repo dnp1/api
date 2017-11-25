@@ -4,10 +4,12 @@ version = "0.1.0"
 authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
 [dependencies]
+hyper = "0.10"
 iron="^0.6"
 router="^0.6"
 params= {git = "https://github.com/robinst/params", branch = "iron-0.6"}
 bodyparser="^0.8"
+modifier="0.1"
 
 postgres= { version = "*", features = ["with-uuid", "with-chrono"] }
 r2d2="*"

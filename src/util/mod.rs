@@ -3,6 +3,7 @@ use iron::request::Request;
 mod session;
 mod session_handler;
 mod storage;
+mod response;
 
 pub use self::storage::Storage;
 pub use self::storage::DiskStorage;
@@ -12,6 +13,7 @@ pub use self::session::SessionManager;
 pub use self::session::Session;
 pub use self::session::TOKEN_NAME;
 pub use self::session::set_cookie;
+pub use self::response::Json;
 
 pub fn get_url_param_default<'s>(req: &'s Request, name: &'s str) -> &'s str {
     return req.extensions.get::<Router>().unwrap().find(name).unwrap_or("/");

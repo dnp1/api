@@ -10,6 +10,7 @@ use std::error::Error;
 use uuid::Uuid;
 use serde_json;
 use postgres::rows;
+use util::Json;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>
@@ -51,9 +52,6 @@ impl SessionHandler for Handler {
                 }
             }
         };
-        match serde_json::to_string(&email) {
-            Err(err) => Ok(Response::with((status::InternalServerError, err.description()))),
-            Ok(email) => Ok(Response::with((status::Ok, email)))
-        }
+        Ok(Response::with((status::Ok, Json(email))))
     }
 }
