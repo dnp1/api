@@ -5,7 +5,7 @@ use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util;
-use util::{Session, SessionHandler, Json};
+use util::{Session, SessionHandler, json};
 use std::error::Error;
 use bodyparser;
 use uuid::Uuid;
@@ -70,6 +70,6 @@ impl SessionHandler for Handler {
             status::Unauthorized
         };
 
-        Ok(Response::with((status_code, Json(ResponseBody {success: password_match}))))
+        Ok(Response::with((status_code, json(ResponseBody {success: password_match}))))
     }
 }

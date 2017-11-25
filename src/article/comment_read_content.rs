@@ -9,7 +9,7 @@ use util::{Session, SessionHandler};
 use std::error::Error;
 use uuid::Uuid;
 use article::common::Content;
-use util::Json;
+use util::json;
 
 pub struct Handler {
     pub db: Arc<Pool<PostgresConnectionManager>>,
@@ -44,6 +44,6 @@ impl SessionHandler for Handler {
                 }
             }
         };
-        Ok(Response::with((status::Ok, Json(comment_content))))
+        Ok(Response::with((status::Ok, json(comment_content))))
     }
 }

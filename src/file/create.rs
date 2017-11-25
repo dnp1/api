@@ -13,7 +13,7 @@ use util::{Session, SessionHandler, Storage};
 use uuid::Uuid;
 use std::error::Error;
 use std::io::BufReader;
-use util::Json;
+use util::json;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -74,6 +74,6 @@ impl <T>SessionHandler for Handler<T> where T : Storage {
             return Ok(Response::with((status::InternalServerError, e.description())))
         };
 
-        Ok(Response::with((status::Ok, Json(&File{id:file_id}))))
+        Ok(Response::with((status::Ok, json(&File{id:file_id}))))
     }
 }

@@ -4,7 +4,7 @@ use iron;
 use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{SessionManager, Session, Json};
+use util::{SessionManager, Session, json};
 use std::error::Error;
 use user::common::ExposedSession;
 use iron::headers::{SetCookie};
@@ -32,7 +32,7 @@ impl iron::Handler for Handler {
         };
 
         if let Ok(session) = self.sm.create_session_payload(&mut Session::new(session_id)) {
-            let mut response = Response::with((status::Ok, Json(&ExposedSession{user_id: None})));
+            let mut response = Response::with((status::Ok, json(&ExposedSession{user_id: None})));
             set_cookie(&mut response, &session);
             Ok(response)
         } else {

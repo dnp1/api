@@ -5,7 +5,7 @@ use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use util;
-use util::{Session, SessionHandler, Json};
+use util::{Session, SessionHandler, json};
 use std::error::Error;
 use uuid::Uuid;
 
@@ -41,6 +41,6 @@ impl SessionHandler for Handler {
                 }
             }
         };
-        Ok(Response::with((status::Ok, Json(Avatar{file_id :avatar_id}))))
+        Ok(Response::with((status::Ok, json(Avatar{file_id :avatar_id}))))
     }
 }

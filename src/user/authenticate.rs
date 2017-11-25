@@ -6,7 +6,7 @@ use std::error::Error;
 use uuid::Uuid;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SessionHandler, Json};
+use util::{Session, SessionHandler, json};
 use user::common::ExposedSession;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -45,7 +45,7 @@ impl SessionHandler for Handler {
         };
         if let Some(_) = user_id {
             session.user_id = user_id;
-            Ok(Response::with((status::Ok, Json(ExposedSession{user_id}))))
+            Ok(Response::with((status::Ok, json(ExposedSession{user_id}))))
         } else {
             Ok(Response::with((status::Unauthorized, "")))
         }
