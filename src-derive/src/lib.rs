@@ -53,7 +53,7 @@ pub fn from_route_params(input: TokenStream) -> TokenStream {
 
     let tokens = quote! {
         impl #impl_generics FromRouteParams<#name> for #name #ty_generics #where_clause {
-            fn from_route_params<'a>(params: ::router::Params) -> ::std::result::Result<#name, ()> {
+            fn from_route_params<'a>(params: &::router::Params) -> ::std::result::Result<#name, ()> {
                 // start with the default implementation
                 #(
                     let #idents = match params.find(#keys) {

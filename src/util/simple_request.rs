@@ -6,7 +6,7 @@ use iron::Request;
 use iron::Plugin;
 
 pub trait FromRouteParams<T> {
-    fn from_route_params<'a>(params : ::router::Params) -> Result<T, ()>;
+    fn from_route_params<'a>(params : &::router::Params) -> Result<T, ()>;
 }
 
 
