@@ -8,7 +8,7 @@ use iron::headers::{Cookie, SetCookie};
 
 pub const TOKEN_NAME : &'static str = "Authorization";
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Session {
     pub id: i64,
     pub user_id: Option<Uuid>,

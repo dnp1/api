@@ -1,41 +1,45 @@
+use std::sync::Arc;
 use bodyparser;
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 use std::str::FromStr;
 use iron::Request;
 use iron::Plugin;
-
-pub trait FromRouteParams<T> {
-    fn from_route_params<'a>(params : &::router::Params) -> Result<T, ()>;
-}
-
-
-#[derive(FromRouteParams)]
-pub struct RP {
-    a: String
-}
+use iron::Handler;
+use iron::IronResult;
+use iron::Response;
+use iron::status;
+use util::set_cookie;
+use util::session::SessionManager;
+use util::Session;
 
 pub trait FromRequest {
     fn from_request<'a>(req: &'a mut Request) -> Self;
 }
 
-pub struct SimpleRequest<R, Q, B, E>
-    where R: DeserializeOwned + Clone, Q: DeserializeOwned + Clone, B: DeserializeOwned + Clone, E: FromRequest
-{
-    route: R,
-    query : Q,
-    body: B,
-    extra: E
+
+pub trait FromRouteParams<T> {
+    fn from_route_params<'a>(params: &::router::Params) -> Result<T, ()>;
 }
 
-impl <'a, R, Q, B, E> SimpleRequest<R, Q, B, E>
-    where R: 'static + DeserializeOwned + Clone, Q:  'static + DeserializeOwned + Clone, B: 'static + DeserializeOwned + Clone, E: FromRequest
+pub struct SimpleRequest<R, Q, B, S>
 {
-    fn from_request(req: &'a mut Request) -> Result<Self, &'a str> {
-        let route = match req.get::<bodyparser::Struct<R>>() {
-            Err(err) => return Err("dsadas"),
-            Ok(None) => return Err("empty body"),
-            Ok(Some(struct_body)) => struct_body,
+    route_params: R,
+    query_params: Q,
+    body: B,
+    extra: S,
+}
+
+impl<R, Q, B, S> SimpleRequest<R, Q, B, S>
+    where R: FromRouteParams<R> + 'static + Clone,
+          Q: 'static + DeserializeOwned + Clone,
+          B: 'static + DeserializeOwned + Clone,
+          S: 'static + DeserializeOwned + Clone + FromRequest
+{
+    fn from_request<'a>(req: &'a mut Request) -> Result<Self, &'a str> {
+        let route = match R::from_route_params(req.extensions.get::<::router::Router>().unwrap()) {
+            Err(_) => return Err("dsadas"),
+            Ok(val) => val,
         };
         let query = match req.get::<bodyparser::Struct<Q>>() {
             Err(err) => return Err("dsdasda"),
@@ -49,10 +53,82 @@ impl <'a, R, Q, B, E> SimpleRequest<R, Q, B, E>
         };
 
         Ok(SimpleRequest {
-            route: route.clone(),
-            query: query.clone(),
-            body: body.clone(),
-            extra: E::from_request(req),
+            route_params: route,
+            query_params: query,
+            body,
+            extra : S::from_request(req),
         })
+    }
+}
+
+
+#[derive(Clone, Deserialize)]
+pub struct Empty;
+
+impl FromRequest for Empty {
+    fn from_request<'a>(req: &'a mut Request) -> Self {
+        Empty
+    }
+}
+
+pub trait SimpleHandler
+    {
+    fn authenticated(&self) -> bool {
+        false
+    }
+    fn handle<R, Q, B, S>(&self, req: &SimpleRequest<R, Q, B, S>, session: &mut Session) -> IronResult<Response>
+        where R: FromRouteParams<R> + Clone,
+              Q: DeserializeOwned + Clone,
+              B: DeserializeOwned + Clone,
+              S: DeserializeOwned + Clone;
+    }
+
+pub struct SimpleHandlerBox<T, R ,Q, B>
+    where T : SimpleHandler  + Send + Sync + 'static,
+{
+    pub handler: T,
+    pub sm: Arc<SessionManager>,
+    r: ::std::marker::PhantomData<R>,
+    q: ::std::marker::PhantomData<Q>,
+    b: ::std::marker::PhantomData<B>,
+}
+
+
+impl <T, R, Q, B> Handler for SimpleHandlerBox<T, R ,Q, B>
+    where T: SimpleHandler + Send + Sync + 'static,
+          R: FromRouteParams<R> + 'static + Clone + Send + Sync + 'static,
+          Q: 'static + DeserializeOwned + Clone + Send + Sync + 'static,
+          B: 'static + DeserializeOwned + Clone + Send + Sync + 'static
+{
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let mut session = match self.sm.get_request_session(req) {
+            None => return Ok(Response::with((status::Unauthorized, "You must create a session"))),
+            Some(session) => {
+                if self.handler.authenticated() {
+                    if let None = session.user_id {
+                        return Ok(Response::with((status::Unauthorized, "You must authenticate with an user")));
+                    }
+                }
+                session
+            }
+        };
+
+        let mut r: SimpleRequest<R, Q, B, Empty> = match SimpleRequest::from_request(req) {
+            Err(s) => return Ok(Response::with((status::BadRequest, "You must create a session"))),
+            Ok(val) => val,
+        };
+
+        match self.handler.handle(&r, &mut session) {
+            Ok(mut response) => {
+                match self.sm.create_session_payload(&mut session) {
+                    Err(err) => Ok(Response::with((status::InternalServerError, err.to_string()))),
+                    Ok(payload) => {
+                        set_cookie(&mut response, &payload);
+                        Ok(response)
+                    }
+                }
+            }
+            Err(err) => Err(err),
+        }
     }
 }
