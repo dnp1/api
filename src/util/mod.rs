@@ -18,6 +18,11 @@ pub use self::session::TOKEN_NAME;
 pub use self::session::set_cookie;
 pub use self::simple_request::FromRouteParams;
 
+pub use self::simple_request::SimpleHandler;
+pub use self::simple_request::Empty;
+pub use self::simple_request::SimpleRequest;
+pub use self::simple_request::SimpleHandlerBox;
+
 pub fn json<T>(data : T) -> Json<T>  where T: Serialize {
     Json(data, r#"{"code": "E01", "message": "Data serialization has failed"}"#.as_bytes())
 }

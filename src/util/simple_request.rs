@@ -24,14 +24,14 @@ pub trait FromRouteParams<T> {
 
 pub struct SimpleRequest<R, Q, B, S>
 {
-    route_params: R,
-    query_params: Q,
-    body: B,
-    extra: S,
+    pub route_params: R,
+    pub query_params: Q,
+    pub body: B,
+    pub extra: S,
 }
 
 impl<R, Q, B, S> SimpleRequest<R, Q, B, S>
-    where R: FromRouteParams<R> + 'static + Clone,
+    where R: FromRouteParams<R> + 'static,
           Q: 'static + DeserializeOwned + Clone,
           B: 'static + DeserializeOwned + Clone,
           S: 'static + DeserializeOwned + Clone + FromRequest
@@ -56,7 +56,7 @@ impl<R, Q, B, S> SimpleRequest<R, Q, B, S>
             route_params: route,
             query_params: query,
             body,
-            extra : S::from_request(req),
+            extra: S::from_request(req),
         })
     }
 }
@@ -71,20 +71,23 @@ impl FromRequest for Empty {
     }
 }
 
-pub trait SimpleHandler
-    {
+pub trait SimpleHandler<R, Q, B, S>
+    where R: FromRouteParams<R>,
+          Q: DeserializeOwned + Clone,
+          B: DeserializeOwned + Clone,
+          S: DeserializeOwned + Clone
+{
     fn authenticated(&self) -> bool {
         false
     }
-    fn handle<R, Q, B, S>(&self, req: &SimpleRequest<R, Q, B, S>, session: &mut Session) -> IronResult<Response>
-        where R: FromRouteParams<R> + Clone,
-              Q: DeserializeOwned + Clone,
-              B: DeserializeOwned + Clone,
-              S: DeserializeOwned + Clone;
-    }
+    fn handle(&self, req: &SimpleRequest<R, Q, B, S>, session: &mut Session) -> IronResult<Response>;
+}
 
-pub struct SimpleHandlerBox<T, R ,Q, B>
-    where T : SimpleHandler  + Send + Sync + 'static,
+pub struct SimpleHandlerBox<T, R, Q, B>
+    where T: SimpleHandler<R, Q, B, Empty> + Send + Sync + 'static,
+          R: FromRouteParams<R>,
+          Q: DeserializeOwned + Clone,
+          B: DeserializeOwned + Clone,
 {
     pub handler: T,
     pub sm: Arc<SessionManager>,
@@ -93,10 +96,27 @@ pub struct SimpleHandlerBox<T, R ,Q, B>
     b: ::std::marker::PhantomData<B>,
 }
 
+impl <T, R, Q, B> SimpleHandlerBox<T, R, Q, B>
+    where T: SimpleHandler<R, Q, B, Empty> + Send + Sync + 'static,
+          R: FromRouteParams<R>,
+          Q: DeserializeOwned + Clone,
+          B: DeserializeOwned + Clone,
+{
+    pub fn new(handler: T, sm: Arc<SessionManager>) -> Self {
+        SimpleHandlerBox {
+            handler,
+            sm,
+            r: ::std::marker::PhantomData,
+            q: ::std::marker::PhantomData,
+            b: ::std::marker::PhantomData,
+        }
+    }
+}
 
-impl <T, R, Q, B> Handler for SimpleHandlerBox<T, R ,Q, B>
-    where T: SimpleHandler + Send + Sync + 'static,
-          R: FromRouteParams<R> + 'static + Clone + Send + Sync + 'static,
+
+impl<T, R, Q, B> Handler for SimpleHandlerBox<T, R, Q, B>
+    where T: SimpleHandler<R, Q, B, Empty> + Send + Sync + 'static,
+          R: FromRouteParams<R> + Send + Sync + 'static,
           Q: 'static + DeserializeOwned + Clone + Send + Sync + 'static,
           B: 'static + DeserializeOwned + Clone + Send + Sync + 'static
 {

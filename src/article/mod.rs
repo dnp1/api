@@ -3,7 +3,8 @@ use std::sync::Arc;
 use router::Router;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{SessionManager, SessionHandlerBox};
+use util::{SessionManager, SessionHandlerBox, SimpleHandlerBox};
+use util::SimpleHandler;
 
 mod comment_create;
 mod comment_list;
@@ -32,7 +33,7 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     router.get("/article/:article_id", SessionHandlerBox { handler: article_read, sm: sm.clone() }, "article_read");
     router.get("/article/:article_id/tag", SessionHandlerBox { handler: article_tag_list, sm: sm.clone() }, "article_tag_list");
     router.get("/article/:article_id/comment", SessionHandlerBox { handler: article_comment_list, sm: sm.clone() }, "article_comment_list");
-    router.get("/article/:article_id/comment/:comment_id", SessionHandlerBox { handler: article_comment_read, sm: sm.clone() }, "article_comment_read");
+    router.get("/article/:article_id/comment/:comment_id", SimpleHandlerBox::new(article_comment_read, sm.clone() ), "article_comment_read");
     router.get("/article/:article_id/comment/:comment_id/content", SessionHandlerBox { handler: article_comment_read_content, sm: sm.clone() }, "article_comment_read_content");
     router.post("/article/:article_id/comment", SessionHandlerBox { handler: article_comment_create, sm: sm.clone() }, "article_comment_create");
     router.get("/article/:article_id/content", SessionHandlerBox { handler: article_read_content, sm: sm.clone() }, "article_comment_create_content");
