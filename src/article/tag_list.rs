@@ -14,7 +14,7 @@ pub struct Handler {
 }
 
 impl SessionHandler for Handler {
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let ref article_id = util::get_url_param_default(req, "article_id");
         match self.db.get() {
             Err(err) => Ok(Response::with((status::ServiceUnavailable, err.description()))),

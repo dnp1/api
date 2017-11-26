@@ -30,7 +30,7 @@ impl <T>SessionHandler for Handler<T> where T : Storage {
     fn authenticated(&self) -> bool {
         true
     }
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let file = match req.get_ref::<Params>() {
             Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
             Ok(params) => match params.find(&["file"]) {

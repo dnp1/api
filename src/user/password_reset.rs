@@ -15,7 +15,7 @@ pub struct Handler {
 }
 
 impl SessionHandler for Handler {
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         Ok(Response::with((status::Ok, "TODO:")))
     }
 }

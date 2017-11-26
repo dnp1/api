@@ -19,7 +19,7 @@ pub struct Handler {
 const FETCH_LENGTH: i32 = 10;
 
 impl SessionHandler for Handler {
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let after_uuid: Option<Uuid> = None; //TODO:get_query_param
         let resp : Vec<Article> = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),

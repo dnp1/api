@@ -15,7 +15,6 @@ pub use self::session::SessionManager;
 pub use self::session::Session;
 pub use self::session::TOKEN_NAME;
 pub use self::session::set_cookie;
-//pub use self::response::Json;
 
 pub fn json<T>(data : T) -> Json<T>  where T: Serialize {
     Json(data, r#"{"code": "E01", "message": "Data serialization has failed"}"#.as_bytes())

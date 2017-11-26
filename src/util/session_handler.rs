@@ -10,7 +10,7 @@ pub trait SessionHandler {
     fn authenticated(&self) -> bool {
         false
     }
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response>;
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response>;
 }
 
 pub struct SessionHandlerBox<T> {
@@ -31,7 +31,7 @@ impl<T> Handler for SessionHandlerBox<T> where T: SessionHandler + Send + Sync +
                 session
             }
         };
-        match self.handler.handle_session(&mut session, req) {
+        match self.handler.handle(&mut session, req) {
             Ok(mut response) => {
                 match self.sm.create_session_payload(&mut session) {
                     Err(err) => Ok(Response::with((status::InternalServerError, err.to_string()))),

@@ -20,7 +20,7 @@ pub struct Handler {
 }
 
 impl SessionHandler for Handler {
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let body = req.get::<bodyparser::Struct<RequestBody>>();
         let body = match body {
             Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),

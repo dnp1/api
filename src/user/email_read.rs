@@ -29,7 +29,7 @@ impl Email {
 }
 
 impl SessionHandler for Handler {
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let user_id: Uuid = match util::get_url_param(req, "user_id") {
             None => return Ok(Response::with((status::BadRequest, "no user_id"))),
             Some(ref user_id) => match Uuid::parse_str(user_id.as_ref()) {

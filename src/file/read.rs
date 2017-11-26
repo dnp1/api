@@ -39,7 +39,7 @@ pub struct Handler<T : Storage> {
 }
 
 impl <T>SessionHandler for Handler<T> where T: Storage {
-    fn handle_session(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
         let file_id: Uuid = match util::get_url_param(req, "file_id") {
             None => return Ok(Response::with((status::BadRequest, "no file_id"))),
             Some(ref user_id) => match Uuid::parse_str(user_id.as_ref()) {
