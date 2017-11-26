@@ -5,6 +5,8 @@ authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
 [dependencies]
 #hyper = "0.10"
+src-derive = { path = "src-derive" }
+
 iron="^0.6"
 router="^0.6"
 params= {git = "https://github.com/robinst/params", branch = "iron-0.6"}

@@ -3,7 +3,7 @@ use jwt::errors::Result;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 use iron::{Request, Response};
-use iron::headers::{Cookie, SetCookie, AccessControlAllowCredentials, AccessControlAllowOrigin};
+use iron::headers::{Cookie, SetCookie};
 
 
 pub const TOKEN_NAME : &'static str = "Authorization";

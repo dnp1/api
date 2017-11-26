@@ -4,6 +4,7 @@ mod session;
 mod session_handler;
 mod storage;
 use serde::Serialize;
+mod simple_request;
 
 use iron_json_response_modifier::Json;
 

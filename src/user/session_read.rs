@@ -1,6 +1,5 @@
 use iron::prelude::*;
 use iron::status;
-use std::error::Error;
 use util::{Session, SessionHandler, json};
 use user::common::ExposedSession;
 

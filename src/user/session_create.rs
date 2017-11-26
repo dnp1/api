@@ -7,8 +7,6 @@ use r2d2_postgres::PostgresConnectionManager;
 use util::{SessionManager, Session, json};
 use std::error::Error;
 use user::common::ExposedSession;
-use iron::headers::{SetCookie};
-use util::TOKEN_NAME;
 use util::{set_cookie};
 
 pub struct Handler {

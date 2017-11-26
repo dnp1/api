@@ -1,8 +1,6 @@
 use std::sync::Arc;
 use iron::{Request, Response, IronResult, status, Handler};
 use util::{SessionManager, Session};
-use iron::headers::{SetCookie};
-use util::TOKEN_NAME;
 use util::{set_cookie};
 
 
