@@ -22,7 +22,7 @@ pub use self::simple_request::SimpleHandler;
 pub use self::simple_request::Empty;
 pub use self::simple_request::SimpleRequest;
 pub use self::simple_request::SimpleHandlerBox;
-
+pub use self::simple_request::ClientError;
 pub fn json<T>(data : T) -> Json<T>  where T: Serialize {
     Json(data, r#"{"code": "E01", "message": "Data serialization has failed"}"#.as_bytes())
 }

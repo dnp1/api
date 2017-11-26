@@ -53,13 +53,17 @@ pub fn from_route_params(input: TokenStream) -> TokenStream {
 
     let tokens = quote! {
         impl #impl_generics FromRouteParams<#name> for #name #ty_generics #where_clause {
-            fn from_route_params<'a>(params: &::router::Params) -> ::std::result::Result<#name, ()> {
+            fn from_request<'a>(params: &::router::Params) -> ::iron::IronResult<#name> {
                 // start with the default implementation
                 #(
-                    let #idents = match params.find(#keys) {
-                        None => return ::std::result::Result::Err(()),
+                    let key = #keys;
+                    let #idents = match params.find(key) {
+                        None => return Err(::iron::error::IronError::new(
+                            ::util::ClientError::MissingRouteParam(key.to_owned()),
+                            ::iron::status::BadRequest)
+                        ),
                         Some(val) => match #tys::from_str(val) {
-                            Err(_) => return ::std::result::Result::Err(()),
+                            Err(err) => return Err(::iron::error::IronError::new(err, err.description())),
                             Ok(val) => val,
                         },
                     };
@@ -70,6 +74,27 @@ pub fn from_route_params(input: TokenStream) -> TokenStream {
                         #idents_1,
                     )*
                 })
+            }
+        }
+    };
+
+    tokens.parse().unwrap()
+}
+
+#[proc_macro_derive(FromBodyParser)]
+pub fn from_bodyparser(input: TokenStream) -> TokenStream {
+    let source = input.to_string();
+    // Parse the string representation into a syntax tree
+    let ast = syn::parse_macro_input(&source).unwrap();
+
+    let name = &ast.ident;
+    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
+
+    let tokens = quote! {
+        impl #impl_generics FromBodyParser<#name> for #name #ty_generics #where_clause {
+            fn from_request<'a>(req: &::iron::Request) -> ::std::result::Result<#name, ::bodyparser::BodyError> {
+                // start with the default implementation
+                 req.get::<bodyparser::Struct<#name>>()
             }
         }
     };
