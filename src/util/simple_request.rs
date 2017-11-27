@@ -23,40 +23,44 @@ pub enum ClientError {
 }
 
 
-impl ::std::error::Error for ClientError{
+impl ::std::error::Error for ClientError {
     fn description(&self) -> &str {
-        "Could not save file"
+        match *self {
+            ClientError::MissingRouteParam(ref msg) => msg,
+            _ => "Could not save file"
+        }
+
     }
 }
 
 impl ::std::fmt::Display for ClientError {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "Oh no, something bad went down")
+        write!(f, "TODO: Oh no, something bad went down")
     }
 }
 
 pub trait FromRequest<T> : Send + Sync + 'static {
-    fn from_request<'a>(req: &'a mut Request) -> IronResult<T> ;
+    fn from_request<'a>(req: &'a Request) -> IronResult<T> ;
 }
 
 pub trait FromRouteParams<T>: Send + Sync + 'static {
-    fn from_request<'a>(params: &::router::Params) -> IronResult<T>; // TODO GET ERROR
-}
-
-pub trait FromUrlEncoded<T>: Clone + 'static {
-    fn from_request<'a>(req: &::iron::Request) -> IronResult<T>;
-}
-
-pub trait FromBodyParser<T>: Clone + 'static {
-    fn from_request<'a>(req: &::iron::Request) -> ::std::result::Result<T, ::bodyparser::BodyError>;
-}
-
-impl <T : FromRouteParams<T>> FromRequest<T> for T {
-    fn from_request<'a>(req: &'a mut Request) -> IronResult<T> {
-        T::from_request(req.extensions.get::<::router::Router>().unwrap())
+    fn from_params<'a>(params: &::router::Params) -> IronResult<T>;
+    fn from_request<'a>(req: &'a Request) -> IronResult<T> {
+        Self::from_params(req.extensions.get::<::router::Router>().unwrap())
     }
 }
 
+pub trait FromUrlEncoded<T>: Send + Sync + 'static {
+    fn from_request<'a>(req: &::iron::Request) -> IronResult<T>;
+}
+
+pub trait FromBodyParser<T>: Send + Sync + 'static {
+    fn from_request<'a>(req: &::iron::Request) -> IronResult<T>;
+}
+
+pub trait FromQueryParams<T>: Send + Sync + 'static {
+    fn from_request<'a>(req: &::iron::Request) -> IronResult<T>;
+}
 
 pub struct SimpleRequest<R, Q, B, S>
 {
@@ -67,12 +71,12 @@ pub struct SimpleRequest<R, Q, B, S>
 }
 
 impl<R, Q, B, S> SimpleRequest<R, Q, B, S>
-    where R: FromRequest<R>,
+    where R: FromRouteParams<R>,
           Q: FromRequest<Q>,
-          B: FromRequest<B>,
+          B: FromBodyParser<B>,
           S: FromRequest<S>,
 {
-    fn from_request<'a>(req: &'a mut Request) -> IronResult<Self> {
+    fn from_request<'a>(req: &'a Request) -> IronResult<Self> {
         let route_params = match R::from_request(req) {
             Err(e) => return Err(e),
             Ok(v) => v,
@@ -105,15 +109,41 @@ impl<R, Q, B, S> SimpleRequest<R, Q, B, S>
 pub struct Empty;
 
 impl FromRequest<Empty> for Empty {
-    fn from_request<'a>(req: &'a mut Request) -> IronResult<Empty> {
+    fn from_request<'a>(_: &'a Request) -> IronResult<Empty> {
         Ok(Empty)
     }
 }
 
+
+impl FromRouteParams<Empty> for Empty  {
+    fn from_params<'a>(_: &::router::Params) -> IronResult<Empty> {
+        Ok(Empty)
+    }
+}
+
+impl FromUrlEncoded<Empty> for Empty {
+    fn from_request<'a>(_: &'a Request) -> IronResult<Empty> {
+        Ok(Empty)
+    }
+}
+
+impl FromBodyParser<Empty> for Empty {
+    fn from_request<'a>(_: &'a Request) -> IronResult<Empty> {
+        Ok(Empty)
+    }
+}
+
+impl FromQueryParams<Empty> for Empty {
+    fn from_request<'a>(_: &'a Request) -> IronResult<Empty> {
+        Ok(Empty)
+    }
+}
+
+
 pub trait SimpleHandler<R, Q, B, S>
-    where R: FromRequest<R>,
+    where R: FromRouteParams<R>,
           Q: FromRequest<Q>,
-          B: FromRequest<B>,
+          B: FromBodyParser<B>,
           S: FromRequest<S>,
 {
     fn authenticated(&self) -> bool {
@@ -124,9 +154,9 @@ pub trait SimpleHandler<R, Q, B, S>
 
 pub struct SimpleHandlerBox<T, R, Q, B>
     where T: SimpleHandler<R, Q, B, Empty> + Send + Sync + 'static,
-          R: FromRequest<R>,
+          R: FromRouteParams<R>,
           Q: FromRequest<Q>,
-          B: FromRequest<B>,
+          B: FromBodyParser<B>,
 {
     pub handler: T,
     pub sm: Arc<SessionManager>,
@@ -137,9 +167,9 @@ pub struct SimpleHandlerBox<T, R, Q, B>
 
 impl <T, R, Q, B> SimpleHandlerBox<T, R, Q, B>
     where T: SimpleHandler<R, Q, B, Empty> + Send + Sync + 'static,
-          R: FromRequest<R>,
+          R: FromRouteParams<R>,
           Q: FromRequest<Q>,
-          B: FromRequest<B>,
+          B: FromBodyParser<B>,
 {
     pub fn new(handler: T, sm: Arc<SessionManager>) -> Self {
         SimpleHandlerBox {
@@ -155,9 +185,9 @@ impl <T, R, Q, B> SimpleHandlerBox<T, R, Q, B>
 
 impl<T, R, Q, B> Handler for SimpleHandlerBox<T, R, Q, B>
     where T: SimpleHandler<R, Q, B, Empty> + Send + Sync + 'static,
-          R: FromRequest<R>,
+          R: FromRouteParams<R>,
           Q: FromRequest<Q>,
-          B: FromRequest<B>,
+          B: FromBodyParser<B>,
 {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let mut session = match self.sm.get_request_session(req) {

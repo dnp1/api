@@ -4,7 +4,7 @@ use iron::status;
 use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SessionHandler};
+use util::{Session, SimpleHandler, SimpleRequest, Empty};
 use std::error::Error;
 use uuid::Uuid;
 use article::common::Article;
@@ -18,8 +18,8 @@ pub struct Handler {
 
 const FETCH_LENGTH: i32 = 10;
 
-impl SessionHandler for Handler {
-    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+impl SimpleHandler<Empty, Empty, Empty, Empty> for Handler {
+    fn handle(&self, _: &SimpleRequest<Empty, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
         let after_uuid: Option<Uuid> = None; //TODO:get_query_param
         let resp : Vec<Article> = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),

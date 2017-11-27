@@ -53,7 +53,7 @@ pub fn from_route_params(input: TokenStream) -> TokenStream {
 
     let tokens = quote! {
         impl #impl_generics FromRouteParams<#name> for #name #ty_generics #where_clause {
-            fn from_request<'a>(params: &::router::Params) -> ::iron::IronResult<#name> {
+            fn from_params<'a>(params: &::router::Params) -> ::iron::IronResult<#name> {
                 // start with the default implementation
                 #(
                     let key = #keys;
