@@ -55,7 +55,7 @@ pub trait FromUrlEncoded<T>: Send + Sync + 'static {
 }
 
 pub trait FromBodyParser<T>: Send + Sync + 'static {
-    fn from_request<'a>(req: &::iron::Request) -> IronResult<T>;
+    fn from_request<'a>(req: &'a mut::iron::Request) -> IronResult<T>;
 }
 
 pub trait FromQueryParams<T>: Send + Sync + 'static {
@@ -76,7 +76,7 @@ impl<R, Q, B, S> SimpleRequest<R, Q, B, S>
           B: FromBodyParser<B>,
           S: FromRequest<S>,
 {
-    fn from_request<'a>(req: &'a Request) -> IronResult<Self> {
+    fn from_request<'a>(req: &'a mut Request) -> IronResult<Self> {
         let route_params = match R::from_request(req) {
             Err(e) => return Err(e),
             Ok(v) => v,
@@ -128,7 +128,7 @@ impl FromUrlEncoded<Empty> for Empty {
 }
 
 impl FromBodyParser<Empty> for Empty {
-    fn from_request<'a>(_: &'a Request) -> IronResult<Empty> {
+    fn from_request<'a>(_: &'a mut Request) -> IronResult<Empty> {
         Ok(Empty)
     }
 }

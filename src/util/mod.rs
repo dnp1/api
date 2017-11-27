@@ -16,8 +16,9 @@ pub use self::session::SessionManager;
 pub use self::session::Session;
 pub use self::session::TOKEN_NAME;
 pub use self::session::set_cookie;
-pub use self::simple_request::FromRouteParams;
 
+pub use self::simple_request::FromRouteParams;
+pub use self::simple_request::FromBodyParser;
 pub use self::simple_request::SimpleHandler;
 pub use self::simple_request::Empty;
 pub use self::simple_request::SimpleRequest;

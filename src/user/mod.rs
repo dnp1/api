@@ -2,7 +2,7 @@ use std::sync::Arc;
 use router::Router;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{SessionManager, SessionHandlerBox};
+use util::{SessionManager, SessionHandlerBox, SimpleHandlerBox, SimpleRequest};
 
 mod avatar_update;
 mod avatar_read;
@@ -40,17 +40,17 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     let session_read = session_read::Handler {};
 
     router.put("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_update, sm: sm.clone() }, "user_avatar_update");
-    router.get("/user/:user_id/avatar", SessionHandlerBox { handler: user_avatar_read, sm: sm.clone() }, "user_avatar_get");
-    router.get("/user/:user_id/email", SessionHandlerBox { handler: user_email_read, sm: sm.clone() }, "user_email_read");
+    router.get("/user/:user_id/avatar", SimpleHandlerBox::new(user_avatar_read, sm.clone() ), "user_avatar_get");
+    router.get("/user/:user_id/email", SimpleHandlerBox::new(user_email_read, sm.clone() ), "user_email_read");
     router.post("/user/:user_id/email/update", SessionHandlerBox { handler: user_email_update_request_create, sm: sm.clone() }, "user_email_update_request_create");
     router.put("/user/:user_id/email", SessionHandlerBox { handler: user_email_update, sm: sm.clone() }, "user_email_update");
     router.put("/user/:user_id/password", SessionHandlerBox { handler: user_password_update, sm: sm.clone() }, "user_password_update");
-    router.get("/user/:user_id/name", SessionHandlerBox { handler: user_name_read, sm: sm.clone() }, "user_name_read");
+    router.get("/user/:user_id/name", SimpleHandlerBox::new(user_name_read, sm.clone() ), "user_name_read");
     router.put("/user/:user_id/name", SessionHandlerBox { handler: user_name_update, sm: sm.clone() }, "user_name_update");
     router.post("/user/sign-up", SessionHandlerBox { handler: user_creation_request_create, sm: sm.clone() }, "user_creation_request_create");
     router.post("/user", SessionHandlerBox { handler: user_create, sm: sm.clone() }, "user_create");
     router.post("/user/password-recovery", SessionHandlerBox { handler: user_password_reset, sm: sm.clone() }, "user_password_reset");
     router.post("/session", session_create, "session_create");
     router.get("/session", SessionHandlerBox { handler: session_read, sm: sm.clone() }, "session_read");
-    router.post("/authenticate", SessionHandlerBox { handler: authenticate, sm: sm.clone() }, "session_authenticate");
+    router.post("/authenticate", SimpleHandlerBox::new(authenticate, sm.clone() ), "session_authenticate");
 }

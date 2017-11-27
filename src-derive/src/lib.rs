@@ -53,7 +53,7 @@ pub fn from_route_params(input: TokenStream) -> TokenStream {
 
     let tokens = quote! {
         impl #impl_generics FromRouteParams<#name> for #name #ty_generics #where_clause {
-            fn from_params<'a>(params: &::router::Params) -> ::iron::IronResult<#name> {
+            fn from_params<'a>(params: &'a::router::Params) -> ::iron::IronResult<#name> {
                 // start with the default implementation
                 #(
                     let key = #keys;
@@ -63,7 +63,10 @@ pub fn from_route_params(input: TokenStream) -> TokenStream {
                             ::iron::status::BadRequest)
                         ),
                         Some(val) => match #tys::from_str(val) {
-                            Err(err) => return Err(::iron::error::IronError::new(err, err.description())),
+                            Err(err) => return Err(::iron::error::IronError::new(
+                                err,
+                                ::iron::status::BadRequest
+                            )),
                             Ok(val) => val,
                         },
                     };
@@ -92,9 +95,21 @@ pub fn from_bodyparser(input: TokenStream) -> TokenStream {
 
     let tokens = quote! {
         impl #impl_generics FromBodyParser<#name> for #name #ty_generics #where_clause {
-            fn from_request<'a>(req: &::iron::Request) -> ::std::result::Result<#name, ::bodyparser::BodyError> {
+            fn from_request<'a>(req: &'a mut ::iron::Request) -> ::iron::IronResult<#name> {
+                use ::iron::Plugin;
                 // start with the default implementation
-                 req.get::<bodyparser::Struct<#name>>()
+                 match req.get::<bodyparser::Struct<#name>>() {
+                    Err(err) => Err(::iron::error::IronError::new(
+                                err,
+                                ::iron::status::BadRequest
+                            )),
+                    Ok(None) => Err(::iron::error::IronError::new(
+                                ::util::ClientError::MissingRouteParam("missing body".to_owned()),
+                                ::iron::status::BadRequest
+                            )),
+                    Ok(Some(val)) => Ok(val.to_owned()),
+
+                 }
             }
         }
     };
