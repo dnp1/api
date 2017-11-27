@@ -4,12 +4,10 @@ use iron::IronResult;
 use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SimpleHandler, Empty, SimpleRequest};
+use util::{Session, SimpleHandler, Empty, SimpleRequest, FromRouteParams, json};
 use std::error::Error;
 use uuid::Uuid;
 use article::common::Comment;
-use util::json;
-use util::FromRouteParams;
 use std::str::FromStr;
 use router::Router;
 

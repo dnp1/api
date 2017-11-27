@@ -5,7 +5,6 @@ use iron::prelude::Response;
 use iron::prelude::Request;
 use iron::prelude::IronResult;
 use iron::status;
-use util::{Session, SessionHandler, Storage};
 use std::error::Error;
 use postgres::rows;
 use uuid::Uuid;
@@ -15,6 +14,8 @@ use iron::response::BodyReader;
 use iron::headers::ContentDisposition;
 use iron::headers::ContentLength;
 use iron::headers::{Headers, DispositionType, DispositionParam, Charset};
+use util::{Storage, Session, SimpleHandler, Empty, SimpleRequest, FromRouteParams, json};
+use std::str::FromStr;
 
 
 struct File {
@@ -38,19 +39,16 @@ pub struct Handler<T : Storage> {
     pub storage: Arc<T>,
 }
 
-impl <T>SessionHandler for Handler<T> where T: Storage {
-    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
-        let file_id: Uuid = match util::get_url_param(req, "file_id") {
-            None => return Ok(Response::with((status::BadRequest, "no file_id"))),
-            Some(ref user_id) => match Uuid::parse_str(user_id.as_ref()) {
-                Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
-                Ok(user_id) => user_id,
-            }
-        };
+#[derive(FromRouteParams)]
+pub struct RouteParams {
+    file_id: Uuid
+}
 
+impl <T>SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler<T> where T: Storage {
+    fn handle(&self, req: &SimpleRequest<RouteParams, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
         let file = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(conn) => match conn.query("SELECT * FROM get_file($1)", &[&file_id]) {
+            Ok(conn) => match conn.query("SELECT * FROM get_file($1)", &[&req.route_params.file_id]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
                    File::from_row(rows.get(0))
@@ -66,7 +64,7 @@ impl <T>SessionHandler for Handler<T> where T: Storage {
         };
 
         let bufread =
-            match self.storage.retrieve(&file_id.simple().to_string()) {
+            match self.storage.retrieve(&req.route_params.file_id.simple().to_string()) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, ))),
                 Ok(bf) => bf,
             };
@@ -80,7 +78,6 @@ impl <T>SessionHandler for Handler<T> where T: Storage {
             None, // The optional la0nguage tag (see `language-tag` crate)
             file.filename.as_bytes().to_vec()// the actual bytes of the filename
         )]});
-
 
         Ok(resp)
     }
