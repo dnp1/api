@@ -21,7 +21,7 @@ pub struct Handler {
 
 impl SimpleHandler<Empty, Empty, RequestBody, Empty> for Handler {
     fn handle(&self, req: &SimpleRequest<Empty, Empty, RequestBody, Empty>, session: &mut Session) -> IronResult<Response> {
-        let user_id: Option<Uuid> = match self.db.get() {
+        let user_id: Uuid = match self.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(conn) => match conn.query(
                 "SELECT authenticate($1, $2, $3, '192.168.43.37') as ok",
@@ -31,16 +31,13 @@ impl SimpleHandler<Empty, Empty, RequestBody, Empty> for Handler {
                     if rows.len() > 0 {
                         rows.get(0).get("ok")
                     } else {
-                        None
+                        return Ok(Response::with((status::Unauthorized, "")))
                     }
                 }
             },
         };
-        if let Some(_) = user_id {
-            session.user_id = user_id;
-            Ok(Response::with((status::Ok, json(ExposedSession { user_id }))))
-        } else {
-            Ok(Response::with((status::Unauthorized, "")))
-        }
+        session.user_id = Some(user_id);
+        Ok(Response::with((status::Ok, json(ExposedSession { user_id: Some(user_id) }))))
+
     }
 }
