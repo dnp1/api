@@ -64,14 +64,13 @@ fn http_listen<T>(h: T) where T: Handler {
 }
 
 fn setup_postgres(conn_str: &str, pool_size: u32, min_idle: u32) -> PostgresPool {
-    let config = r2d2::Config::builder()
-        .pool_size(pool_size)
-        .min_idle(Some(min_idle))
-        .build();
     let manager = PostgresConnectionManager::new(
         conn_str,
         TlsMode::None).unwrap();
-    r2d2::Pool::new(config, manager).unwrap()
+    r2d2::Pool::builder()
+        .max_size(pool_size)
+        .min_idle(Some(min_idle))
+        .build(manager).unwrap()
 }
 
 fn main() {
