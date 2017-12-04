@@ -29,3 +29,16 @@ branch = 'iron-0.6'
 [dependencies.iron-json-response-modifier]
 git = "https://github.com/dnp1/iron-json-response-modifier"
 branch = "master"
+
+
+[dependencies.iron-simple]
+#git = "https://github.com/dnp1/iron-simple-handler"
+path = "/home/danilo/Code/Rust/iron-simple-handler/iron-simple"
+version = "*"
+#branch = "master"
+
+[dependencies.iron-simple-derive]
+#git = "https://github.com/dnp1/iron-simple-handler"
+path = "/home/danilo/Code/Rust/iron-simple-handler/iron-simple-derive"
+version = "*"
+#branch = "master"

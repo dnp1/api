@@ -3,10 +3,15 @@
 extern crate src_derive;
 
 #[macro_use]
+extern crate iron_simple_derive;
+
+#[macro_use]
 extern crate serde_derive;
 
 extern crate serde;
 extern crate chrono;
+
+extern crate iron_simple;
 
 //STD
 use std::time::Duration;
@@ -74,16 +79,17 @@ fn setup_postgres(conn_str: &str, pool_size: u32, min_idle: u32) -> PostgresPool
 }
 
 fn main() {
-    let sm = util::SessionManager::new("sadnash dsa das");
+    let session_manager = util::session_manager::SessionManager::new("sadnash dsa das");
     let file_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/file", 30, 10);
     let articles_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/article", 30, 10);
     let user_db = setup_postgres("postgres://postgres:mysecretpassword@localhost/user", 30, 10);
     let mut router = Router::new();
-    let sm = Arc::from(sm);
     let storage = util::DiskStorage::new("/home/danilo/uploads");
-    file::register_handlers(file_db, &mut router, sm.clone(), Arc::from(storage));
-    article::register_handlers(articles_db, &mut router, sm.clone());
-    user::register_handlers(user_db, &mut router, sm.clone());
+    file::register_handlers(file_db, &mut router, session_manager.clone(), storage);
+    article::register_handlers(articles_db, &mut router, session_manager.clone());
+
+    user::register_handlers(user_db, &mut router, session_manager.clone());
+
     let allowed_hosts = ["http://localhost:8080"].iter().map(ToString::to_string).collect::<HashSet<_>>();
     let cors_middleware = CorsMiddlewareBuilder::new()
         .allowed_hosts(allowed_hosts)

@@ -1,34 +1,33 @@
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use iron::prelude::Response;
-use iron::prelude::Request;
-use iron::prelude::IronResult;
 use iron::status;
-use std::error::Error;
+use iron::Response;
+use iron::IronResult;
+
 use uuid::Uuid;
-use util::{Storage, Session, SimpleHandler, Empty, SimpleRequest, FromRouteParams, json};
-use std::str::FromStr;
+use iron_simple::SimpleHandler;
 
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>,
-}
+use util::json;
+use super::{AuthenticatedSession, Services};
+use std::error::Error;
+use util::storage::Storage;
 
-#[derive(FromRouteParams)]
+#[derive(RequestRouteParams)]
 pub struct RouteParams {
     file_id: Uuid
 }
 
-impl SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler {
-    fn authenticated(&self) -> bool {
-        true
-    }
-    fn handle(&self, req: &SimpleRequest<RouteParams, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
+pub struct Handler;
 
-        let ok: Option<bool> = match self.db.get() {
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (RouteParams, AuthenticatedSession);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (route_params, session) = req;
+
+        let ok: Option<bool> = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(conn) => match conn.query("SELECT deactivate_file($1, $2)",
-                                         &[&req.route_params.file_id, &session.user_id]) {
+                                         &[&route_params.file_id, &session.user_id]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
                     rows.get(0).get(0)

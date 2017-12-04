@@ -1,22 +1,20 @@
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use iron::prelude::Response;
-use iron::prelude::Request;
-use iron::prelude::IronResult;
 use iron::status;
-use std::error::Error;
-use postgres::rows;
+use iron::Response;
+use iron::IronResult;
+
 use uuid::Uuid;
+use iron_simple::SimpleHandler;
+
+use util::json;
+use super::{Session, Services};
+use postgres::rows;
 use iron::mime;
-use util;
 use iron::response::BodyReader;
 use iron::headers::ContentDisposition;
 use iron::headers::ContentLength;
-use iron::headers::{Headers, DispositionType, DispositionParam, Charset};
-use util::{Storage, Session, SimpleHandler, Empty, SimpleRequest, FromRouteParams, json};
-use std::str::FromStr;
-
+use iron::headers::{DispositionType, DispositionParam, Charset};
+use std::error::Error;
+use util::storage::Storage;
 
 struct File {
     size: i64,
@@ -34,24 +32,28 @@ impl File {
     }
 }
 
-pub struct Handler<T : Storage> {
-    pub db: Arc<Pool<PostgresConnectionManager>>,
-    pub storage: Arc<T>,
-}
 
-#[derive(FromRouteParams)]
+
+#[derive(RequestRouteParams)]
 pub struct RouteParams {
     file_id: Uuid
 }
 
-impl <T>SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler<T> where T: Storage {
-    fn handle(&self, req: &SimpleRequest<RouteParams, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
-        let file = match self.db.get() {
+pub struct Handler;
+
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (RouteParams, Session);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (route_params, _) = req;
+
+        let file = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(conn) => match conn.query("SELECT * FROM get_file($1)", &[&req.route_params.file_id]) {
+            Ok(conn) => match conn.query("SELECT * FROM get_file($1)", &[&route_params.file_id]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
-                   File::from_row(rows.get(0))
+                    File::from_row(rows.get(0))
                 } else {
                     return Ok(Response::with((status::NotFound, "file was not found")))
                 }
@@ -64,7 +66,7 @@ impl <T>SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler<T> where T: 
         };
 
         let bufread =
-            match self.storage.retrieve(&req.route_params.file_id.simple().to_string()) {
+            match services.storage.retrieve(&route_params.file_id.simple().to_string()) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, ))),
                 Ok(bf) => bf,
             };
@@ -74,10 +76,10 @@ impl <T>SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler<T> where T: 
         resp.headers.set(ContentDisposition{
             disposition: DispositionType::Attachment,
             parameters: vec![DispositionParam::Filename(
-            Charset::Iso_8859_1, // The character set for the bytes of the filename
-            None, // The optional la0nguage tag (see `language-tag` crate)
-            file.filename.as_bytes().to_vec()// the actual bytes of the filename
-        )]});
+                Charset::Iso_8859_1, // The character set for the bytes of the filename
+                None, // The optional la0nguage tag (see `language-tag` crate)
+                file.filename.as_bytes().to_vec()// the actual bytes of the filename
+            )]});
 
         Ok(resp)
     }

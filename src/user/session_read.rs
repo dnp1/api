@@ -1,12 +1,20 @@
 use iron::prelude::*;
 use iron::status;
-use util::{Session, SessionHandler, json};
+use util::{json};
 use user::common::ExposedSession;
 
-pub struct Handler {}
+use iron_simple::SimpleHandler;
+use super::{Services, Session};
 
-impl SessionHandler for Handler {
-    fn handle(&self, session: &mut Session, _: &mut Request) -> IronResult<Response> {
+pub struct Handler;
+
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (Session,);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (session,) = req;
+
         Ok(Response::with((status::Ok, json(ExposedSession{ user_id: session.user_id }))))
     }
 }

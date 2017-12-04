@@ -4,20 +4,20 @@ use iron;
 use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
-use util::{SessionManager, Session, json};
+use util::{Session, json};
+use util::session_manager::SessionManager;
 use std::error::Error;
 use user::common::ExposedSession;
 use util::{set_cookie};
 
 pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>,
-    pub sm: Arc<SessionManager>,
+    pub services: super::Services
 }
 
 
 impl iron::Handler for Handler {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let db = match self.db.get() {
+        let db = match self.services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => connection
         };
@@ -29,7 +29,7 @@ impl iron::Handler for Handler {
             }
         };
 
-        if let Ok(session) = self.sm.create_session_payload(&mut Session::new(session_id)) {
+        if let Ok(session) = self.services.session_manager.create_session_payload(&mut Session::new(session_id)) {
             let mut response = Response::with((status::Ok, json(&ExposedSession{user_id: None})));
             set_cookie(&mut response, &session);
             Ok(response)

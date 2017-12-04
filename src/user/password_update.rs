@@ -1,54 +1,48 @@
-use iron::prelude::*;
 use iron::status;
+use iron::Response;
+use iron::IronResult;
 
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use util;
-use util::{Session, SessionHandler, json};
+use util::{json};
 use std::error::Error;
-use bodyparser;
 use uuid::Uuid;
+use iron_simple::SimpleHandler;
+use super::{AuthenticatedSession, Services};
 
-#[derive(Clone, Serialize, Deserialize)]
+
+#[derive(Clone, Serialize, Deserialize, RequestBody)]
 #[serde(rename_all = "camelCase")]
-struct RequestBody {
+pub struct RequestBody {
     new_password: String,
     password: String
 }
+
+#[derive(RequestRouteParams)]
+pub struct RouteParams {
+    user_id: Uuid
+}
+
 
 #[derive(Clone, Serialize, Deserialize)]
 struct ResponseBody {
     success: bool
 }
 
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>
-}
+pub struct Handler;
 
-impl SessionHandler for Handler {
-    fn authenticated(&self) -> bool { true }
-    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
-        let user_id: Uuid = match util::get_url_param(req, "user_id") {
-            None => return Ok(Response::with((status::BadRequest, "no user_id"))),
-            Some(ref user_id) => match Uuid::parse_str(user_id.as_ref()) {
-                Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
-                Ok(user_id) => user_id,
-            }
-        };
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (RouteParams, AuthenticatedSession, RequestBody);
 
-        let body = match req.get::<bodyparser::Struct<RequestBody>>() {
-            Err(err) => return Ok(Response::with((status::BadRequest, err.description()))),
-            Ok(None) => return Ok(Response::with((status::BadRequest, "empty body"))),
-            Ok(Some(struct_body)) => struct_body,
-        };
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (route_params, session, body) = req;
+        let user_id: Uuid = route_params.user_id;
 
-        if session.user_id != Some(user_id) {
+        if session.user_id != user_id {
             return Ok(Response::with((status::Forbidden, "you can only update only your self")))
         }
 
 
-        let password_match : bool = match self.db.get() {
+        let password_match : bool = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => {
                 match connection.query(

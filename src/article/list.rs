@@ -1,27 +1,26 @@
-use iron::prelude::*;
 use iron::status;
+use iron::Response;
+use iron::IronResult;
 
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SimpleHandler, SimpleRequest, Empty};
-use std::error::Error;
 use uuid::Uuid;
+use iron_simple::SimpleHandler;
+
 use article::common::Article;
 use util::json;
-
-
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>,
-}
-
+use super::{Session, Services};
+use std::error::Error;
 
 const FETCH_LENGTH: i32 = 10;
 
-impl SimpleHandler<Empty, Empty, Empty, Empty> for Handler {
-    fn handle(&self, _: &SimpleRequest<Empty, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
+pub struct Handler;
+
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (Session,);
+
+    fn handle(&self, _: Self::Request, services: &Self::Services) -> IronResult<Response> {
         let after_uuid: Option<Uuid> = None; //TODO:get_query_param
-        let resp : Vec<Article> = match self.db.get() {
+        let resp: Vec<Article> = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query("SELECT * FROM get_article_list($1, $2)",
                                                      &[&FETCH_LENGTH, &after_uuid]) {

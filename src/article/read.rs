@@ -1,29 +1,32 @@
-use iron::prelude::*;
 use iron::status;
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SimpleHandler, SimpleRequest, FromRouteParams, Empty};
-use std::error::Error;
+use iron::Response;
+use iron::IronResult;
+
 use uuid::Uuid;
+use iron_simple::SimpleHandler;
+
 use article::common::Article;
 use util::json;
-use std::str::FromStr;
+use super::{Session, Services};
+use std::error::Error;
 
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>,
-}
-
-#[derive(FromRouteParams)]
+#[derive(RequestRouteParams)]
 pub struct RouteParams {
     article_id: Uuid
 }
 
-impl SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler {
-    fn handle(&self,  req: & SimpleRequest<RouteParams, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
-        let resp = match self.db.get() {
+pub struct Handler;
+
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (RouteParams, Session,);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (route_params, _) = req;
+
+        let resp = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
-            Ok(connection) => match connection.query("SELECT * FROM get_article($1)", &[&req.route_params.article_id]) {
+            Ok(connection) => match connection.query("SELECT * FROM get_article($1)", &[&route_params.article_id]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
                     Article::from_row(&rows.get(0))

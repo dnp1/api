@@ -1,21 +1,22 @@
-use iron::prelude::*;
 use iron::status;
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SessionHandler};
+use iron::Response;
+use iron::IronResult;
 
-#[derive(Clone, Serialize, Deserialize)]
+use super::{Session, Services};
+use iron_simple::SimpleHandler;
+
+#[derive(Clone, Serialize, Deserialize, RequestBody)]
 struct AccessRecoveryBody {
     email: String,
 }
 
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>
-}
+pub struct Handler;
 
-impl SessionHandler for Handler {
-    fn handle(&self, session: &mut Session, req: &mut Request) -> IronResult<Response> {
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (Session);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
         Ok(Response::with((status::Ok, "TODO:")))
     }
 }

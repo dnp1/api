@@ -1,31 +1,34 @@
-use iron::prelude::*;
 use iron::status;
-use bodyparser;
-use std::sync::Arc;
+use iron::Response;
+use iron::IronResult;
 use std::error::Error;
 use uuid::Uuid;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SimpleHandler, Empty, SimpleRequest, FromBodyParser, json};
+use util::{json};
 use user::common::ExposedSession;
+use iron_simple::SimpleHandler;
 
-#[derive(Clone, Serialize, Deserialize, FromBodyParser)]
-pub struct RequestBody {
+use super::{Services, Session};
+
+#[derive(Clone, Serialize, Deserialize, RequestBody)]
+pub struct Body {
     email: String,
     password: String
 }
 
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>,
-}
+pub struct Handler;
 
-impl SimpleHandler<Empty, Empty, RequestBody, Empty> for Handler {
-    fn handle(&self, req: &SimpleRequest<Empty, Empty, RequestBody, Empty>, session: &mut Session) -> IronResult<Response> {
-        let user_id: Uuid = match self.db.get() {
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (Body, Session);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (body, session) = req;
+
+        let user_id: Uuid = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(conn) => match conn.query(
                 "SELECT authenticate($1, $2, $3, '192.168.43.37') as ok",
-                &[&session.id, &req.body.email, &req.body.password]) {
+                &[&session.id, &body.email, &body.password]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => {
                     if rows.len() > 0 {
@@ -36,8 +39,7 @@ impl SimpleHandler<Empty, Empty, RequestBody, Empty> for Handler {
                 }
             },
         };
-        session.user_id = Some(user_id);
         Ok(Response::with((status::Ok, json(ExposedSession { user_id: Some(user_id) }))))
-
     }
+
 }

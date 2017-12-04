@@ -1,17 +1,14 @@
-use iron::prelude::*;
 use iron::status;
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
+use iron::Response;
+use iron::IronResult;
+
 use std::error::Error;
 use uuid::Uuid;
 use postgres::rows;
-use util::{Session, SimpleHandler, SimpleRequest, Empty, FromRouteParams, json};
-use std::str::FromStr;
-
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>
-}
+use util::{json};
+use iron_simple::SimpleHandler;
+use super::Services;
+use super::AuthenticatedSession;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,7 +17,7 @@ pub struct Email {
 }
 
 
-#[derive(FromRouteParams)]
+#[derive(RequestRouteParams)]
 pub struct RouteParams {
     user_id: Uuid
 }
@@ -34,13 +31,19 @@ impl Email {
     }
 }
 
-impl SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler {
-    fn handle(&self, req: &SimpleRequest<RouteParams, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
-        let email = match self.db.get() {
+pub struct Handler;
+
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (RouteParams, AuthenticatedSession);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (route_params, _) = req;
+        let email = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query(
                 "SELECT get_user_email($1) as address",
-                &[&req.route_params.user_id]) {
+                &[&route_params.user_id]) {
                 Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
                     Email::from_row(&rows.get(0))

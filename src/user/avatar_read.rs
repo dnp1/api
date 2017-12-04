@@ -1,36 +1,36 @@
-use iron::prelude::*;
 use iron::status;
-
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use util::{Session, SimpleHandler, SimpleRequest, Empty, FromRouteParams, json};
-use std::str::FromStr;
+use iron::Response;
+use iron::IronResult;
+use util::{json};
 use std::error::Error;
 use uuid::Uuid;
-
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>
-}
+use iron_simple::{SimpleHandler};
+use super::{Session, Services};
+pub struct Handler;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Avatar {
+struct ResponseBody {
     file_id: Uuid
 }
 
-#[derive(FromRouteParams)]
+#[derive(RequestRouteParams)]
 pub struct RouteParams {
     user_id: Uuid,
 }
 
-impl SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler {
-    fn handle(&self, req: &SimpleRequest<RouteParams, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
-        let file_id: Uuid = match self.db.get() {
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (RouteParams, Session);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (route_params, _) = req;
+
+        let file_id: Uuid = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query(
                 "SELECT get_user_avatar($1) as file_id",
-                &[&req.route_params.user_id]) {
+                &[&route_params.user_id]) {
                 Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
                     rows.get(0).get("file_id")
@@ -39,6 +39,6 @@ impl SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler {
                 }
             }
         };
-        Ok(Response::with((status::Ok, json(Avatar{file_id }))))
+        Ok(Response::with((status::Ok, json(ResponseBody {file_id }))))
     }
 }

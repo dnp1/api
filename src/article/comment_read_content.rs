@@ -1,33 +1,34 @@
-use iron::prelude::*;
 use iron::status;
+use iron::Response;
+use iron::IronResult;
 
-use std::sync::Arc;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use util;
-use util::{Session, SimpleHandler, Empty, SimpleRequest, FromRouteParams};
-use std::error::Error;
 use uuid::Uuid;
-use article::common::Content;
+use iron_simple::SimpleHandler;
+
 use util::json;
-use std::str::FromStr;
+use super::{Session, Services};
+use super::common::Content;
+use std::error::Error;
 
-pub struct Handler {
-    pub db: Arc<Pool<PostgresConnectionManager>>,
-}
-
-#[derive(FromRouteParams)]
+#[derive(RequestRouteParams)]
 pub struct RouteParams {
     article_id: Uuid,
     comment_id: Uuid
 }
 
-impl SimpleHandler<RouteParams, Empty, Empty, Empty> for Handler {
-    fn handle(&self, req: &SimpleRequest<RouteParams, Empty, Empty, Empty>, session: &mut Session) -> IronResult<Response> {
-        let comment_content = match self.db.get() {
+pub struct Handler;
+
+impl SimpleHandler for Handler {
+    type Services = Services;
+    type Request = (RouteParams, Session);
+
+    fn handle(&self, req: Self::Request, services: &Self::Services) -> IronResult<Response> {
+        let (route_params, _) = req;
+
+        let comment_content = match services.db.get() {
             Err(err) => return Ok(Response::with((status::ServiceUnavailable, err.description()))),
             Ok(connection) => match connection.query("SELECT get_article_comment_content($1, $2) as content",
-                                                     &[&req.route_params.article_id, &req.route_params.comment_id]) {
+                                                     &[&route_params.article_id, &route_params.comment_id]) {
                 Err(err) => return Ok(Response::with((status::InternalServerError, err.description()))),
                 Ok(rows) => if rows.len() > 0 {
                     Content::from_row(&rows.get(0))
