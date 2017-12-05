@@ -3,7 +3,7 @@ use iron::Response;
 use iron::IronResult;
 use std::error::Error;
 use uuid::Uuid;
-use util::{json};
+use util::{json, set_session_cookie};
 use user::common::ExposedSession;
 use iron_simple::SimpleHandler;
 
@@ -39,7 +39,16 @@ impl SimpleHandler for Handler {
                 }
             },
         };
-        Ok(Response::with((status::Ok, json(ExposedSession { user_id: Some(user_id) }))))
-    }
 
+        let mut session = session.clone();
+        session.user_id = Some(user_id);
+
+        if let Ok(session) = services.session_manager.create_session_payload(&mut session) {
+            let mut response = Response::with((status::Ok, json(&ExposedSession{user_id: Some(user_id)})));
+            set_session_cookie(&mut response, &session);
+            Ok(response)
+        } else {
+            Ok(Response::with((status::ServiceUnavailable, "TODO")))
+        }
+    }
 }

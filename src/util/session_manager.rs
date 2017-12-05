@@ -13,7 +13,7 @@ pub struct SessionManager {
 }
 
 
-pub fn set_cookie(response: &mut Response, session_payload: &str) {
+pub fn set_session_cookie(response: &mut Response, session_payload: &str) {
     response.headers.set(
         SetCookie(vec![
             String::from(format!("{}={};Max-Age={};Path=/", TOKEN_NAME, session_payload, 3600))

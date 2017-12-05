@@ -66,8 +66,8 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, router: &mut R
     router.get("/article/:article_id/tag", article_tag_list, "article_tag_list");
     router.get("/article/:article_id/comment", article_comment_list, "article_comment_list");
     router.get("/article/:article_id/comment/:comment_id", article_comment_read, "article_comment_read");
-    router.get("/article/:article_id/comment/:comment_id/content", article_comment_create, "article_comment_read_content");
-    router.post("/article/:article_id/comment", article_comment_read_content, "article_comment_create");
+    router.get("/article/:article_id/comment/:comment_id/content", article_comment_read_content, "article_comment_read_content");
+    router.post("/article/:article_id/comment", article_comment_create , "article_comment_create");
 }
 
 

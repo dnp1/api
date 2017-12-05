@@ -8,7 +8,7 @@ use util::{Session, json};
 use util::session_manager::SessionManager;
 use std::error::Error;
 use user::common::ExposedSession;
-use util::{set_cookie};
+use util::{set_session_cookie};
 
 pub struct Handler {
     pub services: super::Services
@@ -31,7 +31,7 @@ impl iron::Handler for Handler {
 
         if let Ok(session) = self.services.session_manager.create_session_payload(&mut Session::new(session_id)) {
             let mut response = Response::with((status::Ok, json(&ExposedSession{user_id: None})));
-            set_cookie(&mut response, &session);
+            set_session_cookie(&mut response, &session);
             Ok(response)
         } else {
             Ok(Response::with((status::ServiceUnavailable, "")))

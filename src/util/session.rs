@@ -21,7 +21,6 @@ pub struct AuthenticatedSession {
     pub user_id: Uuid,
 }
 
-
 pub trait SessionManager: Sync + Send + 'static {
   fn get_session_manager(&self) -> &::util::session_manager::SessionManager;
 }

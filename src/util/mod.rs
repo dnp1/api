@@ -15,7 +15,7 @@ pub use self::storage::DiskStorage;
 pub use self::session::Session;
 pub use self::session::AuthenticatedSession;
 
-pub use self::session_manager::set_cookie;
+pub use self::session_manager::set_session_cookie;
 
 
 pub fn json<T>(data : T) -> Json<T>  where T: Serialize {

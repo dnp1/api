@@ -43,7 +43,7 @@ pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Rou
     let file_read = read::Handler.handler(services.clone(), JsonErrorTransformer);
     let file_create = create::Handler.handler(services.clone(), JsonErrorTransformer);
     let file_delete = delete::Handler.handler(services.clone(), JsonErrorTransformer);
-    r.post("/file", file_read, "file_create");
-    r.get("/file/:file_id", file_create, "file_read");
+    r.post("/file", file_create, "file_create");
+    r.get("/file/:file_id", file_read, "file_read");
     r.delete("/file/:file_id", file_delete, "file_delete");
 }
