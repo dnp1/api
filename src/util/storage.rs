@@ -10,7 +10,6 @@ pub trait Storage: Send + Sync + 'static {
     fn retrieve (&self, filename: &str) -> StorageResult<Box<BufRead + Send>>;
 }
 
-
 type StorageResult<T> = result::Result<T, StorageError>;
 
 #[derive(Debug)]
