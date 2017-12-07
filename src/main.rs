@@ -90,7 +90,7 @@ fn main() {
 
     user::register_handlers(user_db, &mut router, session_manager.clone());
 
-    let allowed_hosts = ["http://localhost:8080"].iter().map(ToString::to_string).collect::<HashSet<_>>();
+    let allowed_hosts = ["http://localhost:8080", "http://danilo.local:8080"].iter().map(ToString::to_string).collect::<HashSet<_>>();
     let cors_middleware = CorsMiddlewareBuilder::new()
         .allowed_hosts(allowed_hosts)
         .allow_credentials(true)
