@@ -21,6 +21,8 @@ serde = "1.0.19"
 serde_derive="*"
 uuid = { version = " ^0.5", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+captcha = "*"
+postgres-inet = "0.1"
 
 [dependencies.iron-cors]
 git = "https://github.com/dnp1/iron-cors-rs"

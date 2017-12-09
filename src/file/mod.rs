@@ -13,19 +13,15 @@ use iron_simple::SimpleHandler;
 mod create;
 mod read;
 mod delete;
+mod services;
 
 pub type Session = ::util::Session;
 pub type AuthenticatedSession = ::util::AuthenticatedSession;
 
 use util::DiskStorage;
 
-pub struct FileServices {
-    pub db: Pool<PostgresConnectionManager>,
-    pub session_manager: SessionManager,
-    pub storage: DiskStorage,
-}
 
-pub type Services = Arc<FileServices>;
+pub type Services = Arc<services::FileServices<DiskStorage>>;
 
 impl ::util::session::SessionManager for Services {
     fn get_session_manager(&self) -> &::util::session_manager::SessionManager {
@@ -34,7 +30,7 @@ impl ::util::session::SessionManager for Services {
 }
 
 pub fn register_handlers<'s>(db: Pool<PostgresConnectionManager>, r: &'s mut Router, session_manager: SessionManager, storage: DiskStorage) {
-    let services = Arc::from(FileServices {
+    let services = Arc::from(services::FileServices {
         db,
         session_manager,
         storage,

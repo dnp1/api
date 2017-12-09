@@ -45,6 +45,7 @@ use iron_cors::CorsMiddlewareBuilder;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate postgres;
+extern crate postgres_inet;
 
 use r2d2_postgres::{TlsMode, PostgresConnectionManager};
 use r2d2::Pool;
