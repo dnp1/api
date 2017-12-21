@@ -27,7 +27,6 @@ extern crate uuid;
 //Web framework
 extern crate iron;
 extern crate router;
-extern crate params;
 extern crate bodyparser;
 extern crate iron_cors;
 extern crate iron_json_response_modifier;
@@ -46,9 +45,11 @@ extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate postgres;
 extern crate postgres_inet;
+extern crate futures_cpupool;
 
 use r2d2_postgres::{TlsMode, PostgresConnectionManager};
 use r2d2::Pool;
+use futures_cpupool::CpuPool;
 
 mod file;
 mod article;
@@ -60,13 +61,13 @@ pub type PostgresPool = Pool<PostgresConnectionManager>;
 
 fn http_listen<T>(h: T) where T: Handler {
     let mut iron = Iron::new(h);
-    iron.threads = 8;
+    iron.pool = CpuPool::new(8);
     iron.timeouts = Timeouts {
         keep_alive: Some(Duration::from_secs(1)),
         read: Some(Duration::from_secs(5)),
         write: Some(Duration::from_secs(5))
     };
-    iron.http("0.0.0.0:3000").unwrap();
+    iron.http("0.0.0.0:3000");
 }
 
 fn setup_postgres(conn_str: &str, pool_size: u32, min_idle: u32) -> PostgresPool {

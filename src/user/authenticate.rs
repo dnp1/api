@@ -23,7 +23,7 @@ pub struct ClientIpAddr(MaskedIpAddr);
 
 impl FromIronRequest<Services> for ClientIpAddr {
     fn from_request<'a>(req: &mut Request, _: &Services) -> SimpleResult<Self> {
-        let v = MaskedIpAddr::from(req.remote_addr.ip());
+        let v = MaskedIpAddr::from(req.remote_addr.unwrap().ip());
         Ok(ClientIpAddr(v))
     }
 }

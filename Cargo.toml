@@ -4,16 +4,22 @@ version = "0.1.0"
 authors = ["Danilo Pereira <dnp1@users.noreply.github.com>"]
 
 [dependencies]
-#hyper = "0.10"
 src-derive = { path = "src-derive" }
+iron={branch="async", git="https://github.com/MJDSys/iron"}
 
-iron="^0.6"
-router="^0.6"
-params="^0.8"
-bodyparser="^0.8"
+#iron={path="/home/danilo/Code/Rust/iron"}
+#iron="^0.6"
+#router="^0.6"
+router={path="/home/danilo/Code/Rust/router"}
+
+#params="^0.8"
+#params={path="/home/danilo/Code/Rust/params"}
+#bodyparser="^0.8"
+bodyparser={path="/home/danilo/Code/Rust/body-parser"}
 #modifier="0.1"
 
-postgres= { version = "*", features = ["with-uuid", "with-chrono"] }
+postgres= { version = "0.15.1", features = ["with-uuid", "with-chrono"] }
+tokio-postgres = {version = "0.3.0", features = ["with-uuid", "with-chrono"]}
 r2d2="^0.8"
 r2d2_postgres="^0.14"
 jsonwebtoken="3"
@@ -23,14 +29,17 @@ uuid = { version = " ^0.5", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 captcha = "*"
 postgres-inet = "0.1"
+futures-cpupool = "0.1.7"
 
 [dependencies.iron-cors]
-git = "https://github.com/dnp1/iron-cors-rs"
-branch = 'iron-0.6'
+#git = "https://github.com/dnp1/iron-cors-rs"
+path = "/home/danilo/Code/Rust/iron-cors-rs"
+#branch = 'iron-0.6'
 
 [dependencies.iron-json-response-modifier]
-git = "https://github.com/dnp1/iron-json-response-modifier"
-branch = "master"
+#git = "https://github.com/dnp1/iron-json-response-modifier"
+#branch = "master"
+path = "/home/danilo/Code/Rust/iron-json-response-modifier"
 
 
 [dependencies.iron-simple]

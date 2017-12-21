@@ -1,10 +1,12 @@
 use iron::{Request, Response};
 use iron::headers::{Cookie, SetCookie};
+use iron::headers::CookieIter;
 use jwt::{encode, decode, Header, Algorithm, Validation};
 use jwt::errors::Result;
 use super::session::Session;
+use iron::headers;
 
-pub const TOKEN_NAME : &'static str = "Authorization";
+pub const TOKEN_NAME: &'static str = "Authorization";
 
 #[derive(Clone)]
 pub struct SessionManager {
@@ -47,17 +49,15 @@ impl SessionManager {
     }
 
     pub fn get_request_session(&self, req: &Request) -> Option<Session> {
-        if let Some(&Cookie(ref cookie)) = req.headers.get() {
-            for c in cookie.iter() {
-                let prefix = format!("{}=", TOKEN_NAME);
-                if c.starts_with(&prefix) {
-                    if let Some(value) =  c.get(prefix.len()..) {
-                        return self.decode_session_payload(value);
-                    }
+        match req.headers.get::<Cookie>() {
+            None => return None,
+            Some(cookie) => match cookie.get(TOKEN_NAME) {
+                Some(value) => {
+                    return self.decode_session_payload(value);
                 }
-
+                None => None,
             }
-        }
+        };
         None
     }
 }
